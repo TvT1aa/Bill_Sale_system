@@ -6,15 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>900</width>
-    <height>700</height>
+    <width>950</width>
+    <height>750</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>入库管理</string>
+   <string>购物车</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <!-- 标题 -->
    <item>
     <widget class="QLabel" name="titleLabel">
      <property name="font">
@@ -24,154 +23,39 @@
       </font>
      </property>
      <property name="text">
-      <string>📦 入库单</string>
+      <string>🛒 我的购物车</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
-   <!-- 分隔线 -->
    <item>
     <widget class="QFrame" name="line">
      <property name="frameShape">
       <enum>QFrame::HLine</enum>
      </property>
-     <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
-     </property>
     </widget>
    </item>
-   <!-- 表单区域 -->
    <item>
-    <layout class="QFormLayout" name="formLayout">
-     <property name="labelAlignment">
-      <set>Qt::AlignRight</set>
-     </property>
-     <property name="horizontalSpacing">
-      <number>20</number>
-     </property>
-     <item row="0" column="0">
-      <widget class="QLabel" name="productLabel">
+    <layout class="QHBoxLayout" name="userInfoLayout">
+     <item>
+      <widget class="QLabel" name="welcomeLabel">
        <property name="text">
-        <string>商品：</string>
+        <string>欢迎，</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <layout class="QHBoxLayout" name="productLayout">
-       <item>
-        <widget class="QComboBox" name="productCombo">
-         <property name="minimumWidth">
-          <number>250</number>
-         </property>
-         <property name="placeholderText">
-          <string>请选择商品</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="searchProductButton">
-         <property name="text">
-          <string>🔍 搜索/新增</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="quantityLabel">
+     <item>
+      <widget class="QLabel" name="usernameLabel">
        <property name="text">
-        <string>入库数量：</string>
+        <string>用户</string>
+       </property>
+       <property name="styleSheet">
+        <string>color: #2196f3; font-weight: bold;</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="quantitySpin">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>99999</number>
-       </property>
-       <property name="suffix">
-        <string> 件</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="priceLabel">
-       <property name="text">
-        <string>入库单价：</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <layout class="QHBoxLayout" name="priceLayout">
-       <item>
-        <widget class="QDoubleSpinBox" name="priceSpin">
-         <property name="minimum">
-          <double>0.01</double>
-         </property>
-         <property name="maximum">
-          <double>999999.99</double>
-         </property>
-         <property name="prefix">
-          <string>¥ </string>
-         </property>
-         <property name="decimals">
-          <number>2</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="totalLabel">
-         <property name="text">
-          <string>小计：¥ 0.00</string>
-         </property>
-         <property name="styleSheet">
-          <string>color: #d32f2f; font-weight: bold;</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="supplierLabel">
-       <property name="text">
-        <string>供应商：</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLineEdit" name="supplierEdit">
-       <property name="placeholderText">
-        <string>请输入供应商名称</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="remarkLabel">
-       <property name="text">
-        <string>备注：</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QTextEdit" name="remarkEdit">
-       <property name="maximumHeight">
-        <number>80</number>
-       </property>
-       <property name="placeholderText">
-        <string>可选：输入备注信息</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <!-- 按钮区域 -->
-   <item>
-    <layout class="QHBoxLayout" name="buttonLayout">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -186,25 +70,101 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="confirmButton">
+      <widget class="QLabel" name="balanceLabel">
        <property name="text">
-        <string>✅ 确认入库</string>
+        <string>余额：¥ 0.00</string>
        </property>
+       <property name="styleSheet">
+        <string>color: #4caf50; font-weight: bold;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="line_2">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="addToCartLayout">
+     <item>
+      <widget class="QLabel" name="productLabel">
+       <property name="text">
+        <string>商品：</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="productCombo">
        <property name="minimumWidth">
-        <number>120</number>
+        <number>200</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="stockLabel">
+       <property name="text">
+        <string>库存：-- 件</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="priceLabel">
+       <property name="text">
+        <string>单价：¥ --</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="quantityLabel">
+       <property name="text">
+        <string>数量：</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="quantitySpin">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>999</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="addToCartButton">
+       <property name="text">
+        <string>➕ 加入购物车</string>
        </property>
        <property name="styleSheet">
         <string>background-color: #4caf50; color: white; font-weight: bold;</string>
        </property>
       </widget>
      </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="line_3">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="cartTitleLayout">
      <item>
-      <widget class="QPushButton" name="resetButton">
-       <property name="text">
-        <string>🔄 重置</string>
+      <widget class="QLabel" name="cartListLabel">
+       <property name="font">
+        <font>
+         <bold>true</bold>
+        </font>
        </property>
-       <property name="minimumWidth">
-        <number>100</number>
+       <property name="text">
+        <string>🛍️ 购物车商品列表</string>
        </property>
       </widget>
      </item>
@@ -221,59 +181,17 @@
        </property>
       </spacer>
      </item>
-    </layout>
-   </item>
-   <!-- 分隔线 -->
-   <item>
-    <widget class="QFrame" name="line_2">
-     <property name="frameShape">
-      <enum>QFrame::HLine</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
-     </property>
-    </widget>
-   </item>
-   <!-- 入库记录标题 -->
-   <item>
-    <layout class="QHBoxLayout" name="historyTitleLayout">
      <item>
-      <widget class="QLabel" name="historyLabel">
+      <widget class="QPushButton" name="clearCartButton">
        <property name="text">
-        <string>📋 最近入库记录</string>
-       </property>
-       <property name="font">
-        <font>
-         <bold>true</bold>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="refreshHistoryButton">
-       <property name="text">
-        <string>🔄 刷新记录</string>
+        <string>🗑️ 清空购物车</string>
        </property>
       </widget>
      </item>
     </layout>
    </item>
-   <!-- 入库记录表格 -->
    <item>
-    <widget class="QTableWidget" name="historyTable">
+    <widget class="QTableWidget" name="cartTable">
      <property name="alternatingRowColors">
       <bool>true</bool>
      </property>
@@ -288,7 +206,111 @@
      </attribute>
     </widget>
    </item>
-   <!-- 状态栏 -->
+   <item>
+    <layout class="QHBoxLayout" name="checkoutLayout">
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="totalLabel">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>总计：¥ 0.00</string>
+       </property>
+       <property name="styleSheet">
+        <string>color: #d32f2f;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="checkoutButton">
+       <property name="text">
+        <string>💰 去结算</string>
+       </property>
+       <property name="minimumWidth">
+        <number>120</number>
+       </property>
+       <property name="styleSheet">
+        <string>background-color: #ff9800; color: white; font-weight: bold;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="line_4">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="orderTitleLayout">
+     <item>
+      <widget class="QLabel" name="orderListLabel">
+       <property name="font">
+        <font>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>📋 我的订单</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="refreshOrdersButton">
+       <property name="text">
+        <string>🔄 刷新订单</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="ordersTable">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
+    </widget>
+   </item>
    <item>
     <widget class="QLabel" name="statusLabel">
      <property name="text">

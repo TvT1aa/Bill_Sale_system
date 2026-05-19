@@ -9,6 +9,8 @@
 #include "module/deduct/deductwidget.h"
 #include "module/balance/balancewidget.h"
 #include "module/address/addresswidget.h"
+#include "module/inventory/admin_validation.h"
+#include "module/report/reportwidget.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,15 +27,26 @@ int main(int argc, char *argv[])
     con.setView(&loginWidget);
     loginWidget.show();
 
+    InventoryWidget inventoryWidget;
+    CartWidget cartWidget;
     DeductWidget deductWidget;
-    deductWidget.show();
-
     BalanceWidget balanceWidget;
-    balanceWidget.show();
-
-    // 测试5：地址管理界面
     AddressWidget addressWidget;
-    addressWidget.show();
+
+    // 显示所有窗口
+    // inventoryWidget.show();
+    // cartWidget.show();
+    // deductWidget.show();
+    // balanceWidget.show();
+    // addressWidget.show();
+
+    AdminValidation w;
+    w.show();
+
+    ReportWidget reportWidget;
+    reportWidget.show();
+
+
 
     return a.exec();
 }
