@@ -1,91 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>InventoryWidget</class>
- <widget class="QWidget" name="InventoryWidget">
+ <class>ReportWidget</class>
+ <widget class="QWidget" name="ReportWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1100</width>
-    <height>800</height>
+    <width>1000</width>
+    <height>750</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>库存管理系统</string>
+   <string>数据报表</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <!-- 标题 -->
    <item>
     <widget class="QLabel" name="titleLabel">
      <property name="font">
       <font>
-       <pointsize>16</pointsize>
+       <pointsize>18</pointsize>
        <bold>true</bold>
       </font>
      </property>
      <property name="text">
-      <string>📦 库存管理系统</string>
+      <string>📊 数据统计报表</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
+   <item>
+    <widget class="QFrame" name="line">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+    </widget>
+   </item>
 
-   <!-- ===== 统计卡片区域 ===== -->
+   <!-- 统计卡片区域 -->
    <item>
     <layout class="QHBoxLayout" name="statsLayout">
-     <!-- 月收入卡片 -->
      <item>
-      <widget class="QFrame" name="monthlyIncomeFrame">
-       <property name="styleSheet">
-        <string>background-color: #e8f5e9; border-radius: 10px;</string>
-       </property>
-       <layout class="QVBoxLayout" name="monthlyIncomeLayout">
-        <item>
-         <widget class="QLabel" name="monthlyIncomeLabel">
-          <property name="text">
-           <string>💰 月收入</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="monthlyIncomeValue">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>¥ 0</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="styleSheet">
-           <string>color: #4caf50;</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-
-     <!-- 销售额卡片 -->
-     <item>
-      <widget class="QFrame" name="salesFrame">
+      <widget class="QFrame" name="totalSalesFrame">
        <property name="styleSheet">
         <string>background-color: #e3f2fd; border-radius: 10px;</string>
        </property>
-       <layout class="QVBoxLayout" name="salesLayout">
+       <layout class="QVBoxLayout" name="totalSalesLayout">
         <item>
-         <widget class="QLabel" name="salesLabel">
+         <widget class="QLabel" name="totalSalesLabel">
           <property name="text">
-           <string>📊 销售额</string>
+           <string>总销售额</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -93,7 +58,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="salesValue">
+         <widget class="QLabel" name="totalSalesValue">
           <property name="font">
            <font>
             <pointsize>20</pointsize>
@@ -114,18 +79,16 @@
        </layout>
       </widget>
      </item>
-
-     <!-- 进货额卡片 -->
      <item>
-      <widget class="QFrame" name="purchaseFrame">
+      <widget class="QFrame" name="totalCostFrame">
        <property name="styleSheet">
         <string>background-color: #fff3e0; border-radius: 10px;</string>
        </property>
-       <layout class="QVBoxLayout" name="purchaseLayout">
+       <layout class="QVBoxLayout" name="totalCostLayout">
         <item>
-         <widget class="QLabel" name="purchaseLabel">
+         <widget class="QLabel" name="totalCostLabel">
           <property name="text">
-           <string>📦 进货额</string>
+           <string>总成本</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -133,7 +96,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="purchaseValue">
+         <widget class="QLabel" name="totalCostValue">
           <property name="font">
            <font>
             <pointsize>20</pointsize>
@@ -154,18 +117,16 @@
        </layout>
       </widget>
      </item>
-
-     <!-- 利润卡片 -->
      <item>
-      <widget class="QFrame" name="profitFrame">
+      <widget class="QFrame" name="totalProfitFrame">
        <property name="styleSheet">
-        <string>background-color: #fce4ec; border-radius: 10px;</string>
+        <string>background-color: #e8f5e9; border-radius: 10px;</string>
        </property>
-       <layout class="QVBoxLayout" name="profitLayout">
+       <layout class="QVBoxLayout" name="totalProfitLayout">
         <item>
-         <widget class="QLabel" name="profitLabel">
+         <widget class="QLabel" name="totalProfitLabel">
           <property name="text">
-           <string>📈 利润</string>
+           <string>总利润</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -173,7 +134,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="profitValue">
+         <widget class="QLabel" name="totalProfitValue">
           <property name="font">
            <font>
             <pointsize>20</pointsize>
@@ -182,6 +143,44 @@
           </property>
           <property name="text">
            <string>¥ 0</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="styleSheet">
+           <string>color: #4caf50;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="orderCountFrame">
+       <property name="styleSheet">
+        <string>background-color: #fce4ec; border-radius: 10px;</string>
+       </property>
+       <layout class="QVBoxLayout" name="orderCountLayout">
+        <item>
+         <widget class="QLabel" name="orderCountLabel">
+          <property name="text">
+           <string>订单总数</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="orderCountValue">
+          <property name="font">
+           <font>
+            <pointsize>20</pointsize>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>0</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -201,149 +200,61 @@
    <item>
     <layout class="QHBoxLayout" name="filterLayout">
      <item>
-      <widget class="QLabel" name="dateRangeLabel">
+      <widget class="QLabel" name="startDateLabel">
        <property name="text">
-        <string>统计月份：</string>
+        <string>开始日期：</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QDateEdit" name="monthSelect">
+      <widget class="QDateEdit" name="startDateEdit">
        <property name="calendarPopup">
         <bool>true</bool>
        </property>
        <property name="displayFormat">
-        <string>yyyy年MM月</string>
+        <string>yyyy-MM-dd</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="queryStatsButton">
+      <widget class="QLabel" name="endDateLabel">
        <property name="text">
-        <string>🔍 查询统计</string>
+        <string>结束日期：</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDateEdit" name="endDateEdit">
+       <property name="calendarPopup">
+        <bool>true</bool>
+       </property>
+       <property name="displayFormat">
+        <string>yyyy-MM-dd</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="queryButton">
+       <property name="text">
+        <string>🔍 查询</string>
+       </property>
+       <property name="minimumWidth">
+        <number>80</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="exportButton">
+       <property name="text">
+        <string>📎 导出报表</string>
+       </property>
+       <property name="minimumWidth">
+        <number>100</number>
        </property>
       </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-
-   <item>
-    <widget class="QFrame" name="line">
-     <property name="frameShape">
-      <enum>QFrame::HLine</enum>
-     </property>
-    </widget>
-   </item>
-
-   <!-- ===== 商品管理区域 ===== -->
-   <item>
-    <layout class="QHBoxLayout" name="productSearchLayout">
-     <item>
-      <widget class="QLabel" name="searchLabel">
-       <property name="text">
-        <string>商品名称：</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="searchLineEdit">
-       <property name="placeholderText">
-        <string>请输入商品名称</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="searchButton">
-       <property name="text">
-        <string>🔍 查询</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="refreshButton">
-       <property name="text">
-        <string>🔄 刷新</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-
-   <item>
-    <widget class="QTableWidget" name="inventoryTable">
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
-    </widget>
-   </item>
-
-   <item>
-    <layout class="QHBoxLayout" name="productButtonLayout">
-     <item>
-      <widget class="QPushButton" name="addButton">
-       <property name="text">
-        <string>➕ 新增商品</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="editButton">
-       <property name="text">
-        <string>✏️ 编辑商品</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="deleteButton">
-       <property name="text">
-        <string>🗑️ 删除商品</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="adjustButton">
-       <property name="text">
-        <string>📦 库存盘点</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -366,39 +277,98 @@
     </widget>
    </item>
 
-   <!-- ===== 详细报表区域（Tab页）===== -->
+   <!-- Tab 报表页签 -->
    <item>
-    <widget class="QTabWidget" name="detailTabWidget">
+    <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="salesDetailTab">
+     <widget class="QWidget" name="salesTab">
       <attribute name="title">
-       <string>销售明细</string>
+       <string>销售报表</string>
       </attribute>
-      <layout class="QVBoxLayout" name="salesDetailLayout">
+      <layout class="QVBoxLayout" name="salesLayout">
        <item>
-        <widget class="QTableWidget" name="salesDetailTable"/>
+        <widget class="QTableWidget" name="salesTable">
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
        </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="purchaseDetailTab">
-      <attribute name="title">
-       <string>进货明细</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="purchaseDetailLayout">
        <item>
-        <widget class="QTableWidget" name="purchaseDetailTable"/>
+        <layout class="QHBoxLayout" name="salesTotalLayout">
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="salesTotalLabel">
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>合计：¥ 0.00</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
      <widget class="QWidget" name="productSalesTab">
       <attribute name="title">
-       <string>商品销量排行</string>
+       <string>商品销售排行</string>
       </attribute>
       <layout class="QVBoxLayout" name="productSalesLayout">
        <item>
-        <widget class="QTableWidget" name="productSalesTable"/>
+        <widget class="QTableWidget" name="productSalesTable">
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="dailySalesTab">
+      <attribute name="title">
+       <string>日报表</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="dailySalesLayout">
+       <item>
+        <widget class="QTableWidget" name="dailySalesTable">
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

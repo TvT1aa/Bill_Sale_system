@@ -45,18 +45,30 @@ set(PROJECT_SOURCES
         # Address 模块
         src/module/address/address_controllor.cpp
         src/module/address/address_controllor.h
+        src/module/address/addresswidget.cpp
+        src/module/address/addresswidget.h
+        src/module/address/addresswidget.ui
 
         # Balance 模块
         src/module/balance/balance_controllor.cpp
         src/module/balance/balance_controllor.h
+        src/module/balance/balancewidget.cpp
+        src/module/balance/balancewidget.h
+        src/module/balance/balancewidget.ui
 
-        # Cart_in 模块
+        # Cart_in 模块（包含入库控制器和购物车页面）
         src/module/cart_in/cart_controllor.cpp
         src/module/cart_in/cart_controllor.h
+        src/module/cart_in/cartwidget.cpp
+        src/module/cart_in/cartwidget.h
+        src/module/cart_in/cartwidget.ui
 
         # Deduct 模块
         src/module/deduct/deduct_controllor.cpp
         src/module/deduct/deduct_controllor.h
+        src/module/deduct/deductwidget.cpp
+        src/module/deduct/deductwidget.h
+        src/module/deduct/deductwidget.ui
 
         # Inventory 模块
         src/module/inventory/inventory_controllor.cpp
@@ -64,35 +76,19 @@ set(PROJECT_SOURCES
         src/module/inventory/inventorywidget.cpp
         src/module/inventory/inventorywidget.h
         src/module/inventory/inventorywidget.ui
+        src/module/inventory/admin_validation.cpp
+        src/module/inventory/admin_validation.h
+        src/module/inventory/admin_validation.ui
 
-        # Cart Widget 模块
-        src/module/cart_in/cartwidget.cpp
-        src/module/cart_in/cartwidget.h
-        src/module/cart_in/cartwidget.ui
-
-        # Deduct Widget 模块
-        src/module/deduct/deductwidget.cpp
-        src/module/deduct/deductwidget.h
-        src/module/deduct/deductwidget.ui
-
-        # Balance 模块
-        src/module/balance/balancewidget.cpp
-        src/module/balance/balancewidget.h
-        src/module/balance/balancewidget.ui
-
-        # Address 模块
-        src/module/address/addresswidget.cpp
-        src/module/address/addresswidget.h
-        src/module/address/addresswidget.ui
+        # Report 模块
+        src/module/report/reportwidget.cpp
+        src/module/report/reportwidget.h
+        src/module/report/reportwidget.ui
         )
-
-
 
 qt_add_executable(BillandSale_system
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        src/module/balance/balancewidget.h src/module/balance/balancewidget.cpp src/module/balance/balancewidget.ui
-        src/module/address/addresswidget.h src/module/address/addresswidget.cpp src/module/address/addresswidget.ui
         )
 
 target_include_directories(BillandSale_system PRIVATE
