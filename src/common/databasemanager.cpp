@@ -1,3 +1,5 @@
+
+
 #include "databasemanager.h"
 #include "desutil.h"
 #include <QCoreApplication>
@@ -5,6 +7,9 @@
 #include <QSqlRecord>
 #include <QSqlQuery>
 #include <QDebug>
+#include <QFile>
+#include <QTextStream>
+#include <QRegularExpression>
 
 // 唯一的连接名，确保单例连接不冲突
 static const char* DB_CONNECTION_NAME = "forgot_password_connection";
@@ -63,19 +68,26 @@ bool DatabaseManager::connectToDatabase()
 // 4. 初始化表结构
 bool DatabaseManager::initDatabase()
 {
-    QString createUsersTable =
-        "CREATE TABLE IF NOT EXISTS users ("
-        "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "  username VARCHAR(50) NOT NULL UNIQUE,"
-        "  email VARCHAR(100) NOT NULL UNIQUE,"
-        "  phone VARCHAR(20) DEFAULT NULL,"
-        "  password_hash VARCHAR(255) NOT NULL,"
-        "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
-        "  is_active INTEGER DEFAULT 1"
-        ")";
+    QFile sqlFile(QCoreApplication::applicationDirPath() + "/../src/common/sql/bill_sale.sql");
+    if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qCritical() << "无法打开 SQL 文件";
+        return false;
+    }
 
-    if (!execute(createUsersTable)) return false;
-    execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
+    QString sql = QTextStream(&sqlFile).readAll();
+    sqlFile.close();
+
+    // 移除注释，按分号分割执行
+    sql.replace(QRegularExpression("--[^\n]*"), "");
+    for (const QString& stmt : sql.split(';', Qt::SkipEmptyParts)) {
+        QString trimmed = stmt.simplified();
+        if (!trimmed.isEmpty() && !execute(trimmed)) {
+            qCritical() << "执行 SQL 失败:" << trimmed;
+            return false;
+        }
+    }
+
+    qDebug() << "数据库表初始化成功";
     return true;
 }
 
