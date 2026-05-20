@@ -1,16 +1,8 @@
 #include <QApplication>
-#include <QMetaObject>
-#include <QMessageBox>
-#include <QRandomGenerator>
-#include "login_controllor.h"
-#include "databasemanager.h"
-#include "module/inventory/inventorywidget.h"
-#include "module/cart_in/cartwidget.h"
-#include "module/deduct/deductwidget.h"
-#include "module/balance/balancewidget.h"
-#include "module/address/addresswidget.h"
-#include "module/inventory/admin_validation.h"
-#include "module/report/reportwidget.h"
+#include <QDebug>
+#include "common/databasemanager.h"
+#include "module/login/loginwidget.h"
+#include "module/login/login_controllor.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,30 +15,9 @@ int main(int argc, char *argv[])
     qDebug() << "数据库连接成功";
 
     LoginWidget loginWidget;
-    login_controllor con;
-    con.setView(&loginWidget);
+    login_controllor controller;
+    controller.setView(&loginWidget);
     loginWidget.show();
-
-    InventoryWidget inventoryWidget;
-    CartWidget cartWidget;
-    DeductWidget deductWidget;
-    BalanceWidget balanceWidget;
-    AddressWidget addressWidget;
-
-    // 显示所有窗口
-    // inventoryWidget.show();
-    // cartWidget.show();
-    // deductWidget.show();
-    // balanceWidget.show();
-    // addressWidget.show();
-
-    AdminValidation w;
-    w.show();
-
-    ReportWidget reportWidget;
-    reportWidget.show();
-
-
 
     return a.exec();
 }
