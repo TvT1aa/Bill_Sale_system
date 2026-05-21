@@ -2,84 +2,66 @@
 #define INVENTORYWIDGET_H
 
 #include <QWidget>
-#include <QTableWidgetItem>
-#include "common/databasemanager.h"
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class InventoryWidget; }
-QT_END_NAMESPACE
+#include <QTableWidget>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QVariantMap>
+#include <QList>
 
 class InventoryWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit InventoryWidget(QWidget *parent = nullptr);
+    explicit InventoryWidget(int userId, int role, QWidget *parent = nullptr);
     ~InventoryWidget();
 
-    void setCurrentUser(int userId, const QString &username);
+signals:
+    // 向后端请求数据的信号
+    void refreshRequested();
+    void searchRequested(const QString& keyword);
+    void addProductRequested(const QVariantMap& product);
+    void updateProductRequested(int id, const QVariantMap& product);
+    void deleteProductRequested(int id);
+    void adminRegisterRequested(const QString& code);
+    void productSelected(int productId);
+    void logoutRequested();  // 添加这行：退出登录信号
 
-    // ========== 商品管理接口 ==========
-    void refreshInventoryData();
-    bool addProduct(const ProductInfo &product);
-    bool updateProduct(int productId, const ProductInfo &product);
-    bool deleteProduct(int productId);
-    bool updateStock(int productId, int newQuantity);
-    void searchProductByName(const QString &name);
-    int getCurrentSelectedProductId() const;
-    QList<ProductInfo> getAllProducts() const;  // ← 添加这行
-
-    // ========== 统计接口 ==========
-    double getMonthlyIncome(int year, int month);
-    double getMonthlySales(int year, int month);
-    double getMonthlyPurchase(int year, int month);
-    double getMonthlyProfit(int year, int month);
-    void refreshStatistics(int year, int month);
-
-    // ========== 明细查询接口 ==========
-    QList<SalesOrderInfo> getMonthlySalesDetails(int year, int month);
-    QList<ProductSalesStat> getProductSalesRanking(int year, int month, int limit = 10);
+public slots:
+    void onInventoryLoaded(const QList<QVariantMap>& products);
+    void onSearchResult(const QList<QVariantMap>& products);
+    void onOperationSuccess(const QString& message);
+    void onOperationError(const QString& error);
+    void onAdminRegisterResult(bool success, const QString& message);
 
 private slots:
-    void onSearchButtonClicked();
-    void onRefreshButtonClicked();
-    void onAddButtonClicked();
-    void onEditButtonClicked();
-    void onDeleteButtonClicked();
-    void onAdjustButtonClicked();
-    void onTableItemDoubleClicked(QTableWidgetItem *item);
-    void onQueryStatsButtonClicked();
+    void onSearchClicked();
+    void onAddClicked();
+    void onEditClicked();
+    void onDeleteClicked();
+    void onRegisterAdminClicked();
+    void onTableItemDoubleClicked(int row, int col);
+    void onRefreshClicked();
 
 private:
-    void setupTable();
-    void setupDetailTables();
-    void updateStatus(const QString &message);
-    void showError(const QString &message);
-    void showSuccess(const QString &message);
-    void updateTotalDisplay();  // ← 添加这行（如果不需要可以删除实现）
+    void setupUI(int role);
+    void setupUserUI();
+    void setupAdminUI();
+    void loadSampleData();
 
-    void displayProducts(const QList<ProductInfo> &products);
-    void addRowToTable(const ProductInfo &product, int row);
-    ProductInfo getProductFromCurrentRow() const;
-    void clearTable();
+    QTableWidget* m_tableWidget;
+    QLineEdit* m_searchEdit;
+    QPushButton* m_searchBtn;
+    QPushButton* m_refreshBtn;
 
-    void displaySalesDetails(const QList<SalesOrderInfo> &orders);
-    void displayProductSalesRanking(const QList<ProductSalesStat> &stats);
-    void addSalesRowToTable(const SalesOrderInfo &order, int row);
-    void addProductSalesRowToTable(const ProductSalesStat &stat, int row, int rank);
+    QPushButton* m_addBtn;
+    QPushButton* m_editBtn;
+    QPushButton* m_deleteBtn;
+    QPushButton* m_registerAdminBtn;
 
-    bool showAddProductDialog(ProductInfo &product);
-    bool showEditProductDialog(ProductInfo &product);
-    bool showStockAdjustDialog(int productId, int currentQuantity, int &newQuantity);
-    void getCurrentYearMonth(int &year, int &month);
-
-private:
-    Ui::InventoryWidget *ui;
-    int m_currentUserId;
-    QString m_currentUsername;
-    QList<ProductInfo> m_currentProducts;
-    QList<SalesOrderInfo> m_currentSalesDetails;
-    QList<ProductSalesStat> m_currentProductSalesRank;
+    int m_userId;
+    int m_role;
 };
 
 #endif // INVENTORYWIDGET_H
