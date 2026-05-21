@@ -1,581 +1,322 @@
 #include "inventorywidget.h"
-#include "ui_inventorywidget.h"
-#include "common/databasemanager.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QHeaderView>
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QDialog>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QFormLayout>
-#include <QLabel>
 #include <QLineEdit>
-#include <QPushButton>
-#include <QIntValidator>
-#include <QDoubleValidator>
-#include <QDate>
-#include <QDateTime>
-#include <QDebug>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
 
-InventoryWidget::InventoryWidget(QWidget *parent)
+InventoryWidget::InventoryWidget(int userId, int role, QWidget *parent)
     : QWidget(parent)
-    , ui(new Ui::InventoryWidget)
-    , m_currentUserId(0)
+    , m_userId(userId)
+    , m_role(role)
 {
-    ui->setupUi(this);
-    setupTable();
-    setupDetailTables();
-
-    connect(ui->searchButton, &QPushButton::clicked, this, &InventoryWidget::onSearchButtonClicked);
-    connect(ui->refreshButton, &QPushButton::clicked, this, &InventoryWidget::onRefreshButtonClicked);
-    connect(ui->addButton, &QPushButton::clicked, this, &InventoryWidget::onAddButtonClicked);
-    connect(ui->editButton, &QPushButton::clicked, this, &InventoryWidget::onEditButtonClicked);
-    connect(ui->deleteButton, &QPushButton::clicked, this, &InventoryWidget::onDeleteButtonClicked);
-    connect(ui->adjustButton, &QPushButton::clicked, this, &InventoryWidget::onAdjustButtonClicked);
-    connect(ui->inventoryTable, &QTableWidget::itemDoubleClicked, this, &InventoryWidget::onTableItemDoubleClicked);
-    connect(ui->queryStatsButton, &QPushButton::clicked, this, &InventoryWidget::onQueryStatsButtonClicked);
-
-    refreshInventoryData();
-
-    ui->monthSelect->setDate(QDate::currentDate());
-    QDate currentDate = QDate::currentDate();
-    refreshStatistics(currentDate.year(), currentDate.month());
-
-    updateStatus("就绪");
+    setupUI(role);
+    loadSampleData();
 }
 
 InventoryWidget::~InventoryWidget()
 {
-    delete ui;
 }
 
-void InventoryWidget::setCurrentUser(int userId, const QString &username)
+void InventoryWidget::setupUI(int role)
 {
-    m_currentUserId = userId;
-    m_currentUsername = username;
-}
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(10);
 
-void InventoryWidget::setupTable()
-{
-    QStringList headers = {"商品ID", "商品名称", "分类", "库存量", "进价", "售价", "单位"};
-    ui->inventoryTable->setColumnCount(headers.size());
-    ui->inventoryTable->setHorizontalHeaderLabels(headers);
+    // 顶部搜索栏
+    QHBoxLayout* topLayout = new QHBoxLayout();
+    m_searchEdit = new QLineEdit(this);
+    m_searchEdit->setPlaceholderText("搜索商品名称...");
+    m_searchEdit->setFixedHeight(32);
+    m_searchBtn = new QPushButton("搜索", this);
+    m_searchBtn->setFixedSize(80, 32);
+    m_refreshBtn = new QPushButton("刷新", this);
+    m_refreshBtn->setFixedSize(80, 32);
 
-    ui->inventoryTable->setColumnWidth(0, 80);
-    ui->inventoryTable->setColumnWidth(1, 150);
-    ui->inventoryTable->setColumnWidth(2, 100);
-    ui->inventoryTable->setColumnWidth(3, 80);
-    ui->inventoryTable->setColumnWidth(4, 100);
-    ui->inventoryTable->setColumnWidth(5, 100);
-    ui->inventoryTable->setColumnWidth(6, 60);
+    topLayout->addWidget(m_searchEdit);
+    topLayout->addWidget(m_searchBtn);
+    topLayout->addWidget(m_refreshBtn);
+    topLayout->addStretch();
 
-    ui->inventoryTable->setAlternatingRowColors(true);
-    ui->inventoryTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->inventoryTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    ui->inventoryTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-}
-
-void InventoryWidget::setupDetailTables()
-{
-    QStringList salesHeaders = {"订单号", "总金额", "地址", "备注", "下单时间"};
-    ui->salesDetailTable->setColumnCount(salesHeaders.size());
-    ui->salesDetailTable->setHorizontalHeaderLabels(salesHeaders);
-    ui->salesDetailTable->setColumnWidth(0, 150);
-    ui->salesDetailTable->setColumnWidth(1, 100);
-    ui->salesDetailTable->setColumnWidth(2, 200);
-    ui->salesDetailTable->setColumnWidth(3, 150);
-    ui->salesDetailTable->setColumnWidth(4, 140);
-
-    QStringList rankHeaders = {"排名", "商品ID", "商品名称", "销售数量", "销售金额"};
-    ui->productSalesTable->setColumnCount(rankHeaders.size());
-    ui->productSalesTable->setHorizontalHeaderLabels(rankHeaders);
-    ui->productSalesTable->setColumnWidth(0, 60);
-    ui->productSalesTable->setColumnWidth(1, 80);
-    ui->productSalesTable->setColumnWidth(2, 200);
-    ui->productSalesTable->setColumnWidth(3, 100);
-    ui->productSalesTable->setColumnWidth(4, 120);
-
-    QList<QTableWidget*> tables = {ui->salesDetailTable, ui->productSalesTable};
-    for (QTableWidget *table : tables) {
-        table->setAlternatingRowColors(true);
-        table->setSelectionBehavior(QAbstractItemView::SelectRows);
-        table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    }
-}
-
-void InventoryWidget::clearTable()
-{
-    ui->inventoryTable->setRowCount(0);
-}
-
-// ========== 商品管理接口实现 ==========
-
-void InventoryWidget::refreshInventoryData()
-{
-    QList<ProductInfo> products = DatabaseManager::instance().getAllProducts();
-
-    for (ProductInfo &product : products) {
-        InventoryInfo inv = DatabaseManager::instance().getInventoryByProductId(product.id);
-        product.quantity = inv.quantity;
+    if (role == 0) {
+        // 普通用户：注册管理员按钮
+        m_registerAdminBtn = new QPushButton("注册管理员", this);
+        m_registerAdminBtn->setFixedSize(120, 32);
+        m_registerAdminBtn->setStyleSheet("QPushButton { background-color: #E6A23C; color: white; border-radius: 4px; }");
+        topLayout->addWidget(m_registerAdminBtn);
+        connect(m_registerAdminBtn, &QPushButton::clicked, this, &InventoryWidget::onRegisterAdminClicked);
+    } else {
+        // 管理员：增删改按钮
+        m_addBtn = new QPushButton("添加商品", this);
+        m_editBtn = new QPushButton("编辑商品", this);
+        m_deleteBtn = new QPushButton("删除商品", this);
+        m_addBtn->setFixedSize(100, 32);
+        m_editBtn->setFixedSize(100, 32);
+        m_deleteBtn->setFixedSize(100, 32);
+        m_addBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; }");
+        m_editBtn->setStyleSheet("QPushButton { background-color: #409EFF; color: white; border-radius: 4px; }");
+        m_deleteBtn->setStyleSheet("QPushButton { background-color: #F56C6C; color: white; border-radius: 4px; }");
+        topLayout->addWidget(m_addBtn);
+        topLayout->addWidget(m_editBtn);
+        topLayout->addWidget(m_deleteBtn);
+        connect(m_addBtn, &QPushButton::clicked, this, &InventoryWidget::onAddClicked);
+        connect(m_editBtn, &QPushButton::clicked, this, &InventoryWidget::onEditClicked);
+        connect(m_deleteBtn, &QPushButton::clicked, this, &InventoryWidget::onDeleteClicked);
     }
 
-    displayProducts(products);
-    updateStatus(QString("加载了 %1 条商品记录").arg(products.size()));
+    mainLayout->addLayout(topLayout);
+
+    // 表格
+    m_tableWidget = new QTableWidget(this);
+    m_tableWidget->setColumnCount(6);
+    QStringList headers = {"ID", "商品名称", "分类", "售价", "库存", "单位"};
+    m_tableWidget->setHorizontalHeaderLabels(headers);
+    m_tableWidget->horizontalHeader()->setStretchLastSection(true);
+    m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_tableWidget->setAlternatingRowColors(true);
+    mainLayout->addWidget(m_tableWidget);
+
+    // 连接信号 - 修复 itemDoubleClicked 使用 lambda
+    connect(m_searchBtn, &QPushButton::clicked, this, &InventoryWidget::onSearchClicked);
+    connect(m_refreshBtn, &QPushButton::clicked, this, &InventoryWidget::onRefreshClicked);
+
+    // 修复：使用 lambda 连接 itemDoubleClicked 信号
+    connect(m_tableWidget, &QTableWidget::itemDoubleClicked,
+            [this](QTableWidgetItem* item) {
+                if (item) {
+                    onTableItemDoubleClicked(item->row(), item->column());
+                }
+            });
+
+    // 初始化时请求数据
+    emit refreshRequested();
 }
 
-bool InventoryWidget::addProduct(const ProductInfo &product)
+void InventoryWidget::loadSampleData()
 {
-    if (DatabaseManager::instance().addProduct(product)) {
-        refreshInventoryData();
-        showSuccess("商品添加成功");
-        return true;
+    QList<QVariantMap> sampleData;
+    for (int i = 1; i <= 5; i++) {
+        QVariantMap product;
+        product["id"] = i;
+        product["name"] = QString("商品%1").arg(i);
+        product["category"] = i % 2 == 0 ? "电子产品" : "日用品";
+        product["salePrice"] = 99.0 * i;
+        product["quantity"] = i * 10;
+        product["unit"] = "件";
+        sampleData.append(product);
     }
-    showError("商品添加失败");
-    return false;
+    onInventoryLoaded(sampleData);
 }
 
-bool InventoryWidget::updateProduct(int productId, const ProductInfo &product)
+void InventoryWidget::onSearchClicked()
 {
-    if (DatabaseManager::instance().updateProduct(product)) {
-        refreshInventoryData();
-        showSuccess("商品更新成功");
-        return true;
-    }
-    showError("商品更新失败");
-    return false;
+    QString keyword = m_searchEdit->text().trimmed();
+    emit searchRequested(keyword);
 }
 
-bool InventoryWidget::deleteProduct(int productId)
+void InventoryWidget::onRefreshClicked()
 {
-    if (DatabaseManager::instance().deleteProduct(productId)) {
-        refreshInventoryData();
-        showSuccess("商品删除成功");
-        return true;
-    }
-    showError("商品删除失败");
-    return false;
+    emit refreshRequested();
 }
 
-bool InventoryWidget::updateStock(int productId, int newQuantity)
+void InventoryWidget::onAddClicked()
 {
-    InventoryInfo inv = DatabaseManager::instance().getInventoryByProductId(productId);
-    if (DatabaseManager::instance().updateInventory(productId, newQuantity, inv.unitPrice)) {
-        refreshInventoryData();
-        showSuccess(QString("库存已更新为 %1 件").arg(newQuantity));
-        return true;
-    }
-    showError("库存更新失败");
-    return false;
+    QDialog dialog(this);
+    dialog.setWindowTitle("添加商品");
+    dialog.setFixedSize(350, 300);
+
+    QFormLayout* form = new QFormLayout(&dialog);
+    QLineEdit* nameEdit = new QLineEdit(&dialog);
+    QLineEdit* categoryEdit = new QLineEdit(&dialog);
+    QDoubleSpinBox* priceSpin = new QDoubleSpinBox(&dialog);
+    priceSpin->setRange(0, 999999);
+    priceSpin->setPrefix("¥");
+    QSpinBox* stockSpin = new QSpinBox(&dialog);
+    stockSpin->setRange(0, 99999);
+    QLineEdit* unitEdit = new QLineEdit(&dialog);
+    unitEdit->setText("件");
+
+    form->addRow("商品名称:", nameEdit);
+    form->addRow("分类:", categoryEdit);
+    form->addRow("售价:", priceSpin);
+    form->addRow("库存:", stockSpin);
+    form->addRow("单位:", unitEdit);
+
+    QPushButton* submitBtn = new QPushButton("确定", &dialog);
+    QPushButton* cancelBtn = new QPushButton("取消", &dialog);
+    QHBoxLayout* btnLayout = new QHBoxLayout();
+    btnLayout->addWidget(submitBtn);
+    btnLayout->addWidget(cancelBtn);
+    form->addRow(btnLayout);
+
+    connect(submitBtn, &QPushButton::clicked, [&]() {
+        if (nameEdit->text().isEmpty()) {
+            QMessageBox::warning(&dialog, "提示", "请输入商品名称");
+            return;
+        }
+        QVariantMap product;
+        product["name"] = nameEdit->text();
+        product["category"] = categoryEdit->text();
+        product["salePrice"] = priceSpin->value();
+        product["quantity"] = stockSpin->value();
+        product["unit"] = unitEdit->text();
+        emit addProductRequested(product);
+        dialog.accept();
+    });
+    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
 }
 
-void InventoryWidget::searchProductByName(const QString &name)
+void InventoryWidget::onEditClicked()
 {
-    if (name.isEmpty()) {
-        refreshInventoryData();
-        return;
-    }
-
-    QList<ProductInfo> results = DatabaseManager::instance().searchProductsByName(name);
-    displayProducts(results);
-    updateStatus(QString("找到 %1 条匹配记录").arg(results.size()));
-}
-
-int InventoryWidget::getCurrentSelectedProductId() const
-{
-    int currentRow = ui->inventoryTable->currentRow();
-    if (currentRow < 0) return -1;
-    return ui->inventoryTable->item(currentRow, 0)->text().toInt();
-}
-
-QList<ProductInfo> InventoryWidget::getAllProducts() const
-{
-    return m_currentProducts;
-}
-
-// ========== 统计接口实现 ==========
-
-double InventoryWidget::getMonthlyIncome(int year, int month)
-{
-    QDateTime startDate(QDate(year, month, 1), QTime(0, 0, 0));
-    QDateTime endDate = startDate.addMonths(1).addSecs(-1);
-    return DatabaseManager::instance().getTotalSales(startDate, endDate);
-}
-
-double InventoryWidget::getMonthlySales(int year, int month)
-{
-    QDateTime startDate(QDate(year, month, 1), QTime(0, 0, 0));
-    QDateTime endDate = startDate.addMonths(1).addSecs(-1);
-    return DatabaseManager::instance().getTotalSales(startDate, endDate);
-}
-
-double InventoryWidget::getMonthlyPurchase(int year, int month)
-{
-    return 0; // TODO: 实现采购统计
-}
-
-double InventoryWidget::getMonthlyProfit(int year, int month)
-{
-    QDateTime startDate(QDate(year, month, 1), QTime(0, 0, 0));
-    QDateTime endDate = startDate.addMonths(1).addSecs(-1);
-    return DatabaseManager::instance().getTotalProfit(startDate, endDate);
-}
-
-void InventoryWidget::refreshStatistics(int year, int month)
-{
-    double sales = getMonthlySales(year, month);
-    double profit = getMonthlyProfit(year, month);
-
-    ui->salesValue->setText(QString("¥ %1").arg(sales, 0, 'f', 2));
-    ui->profitValue->setText(QString("¥ %1").arg(profit, 0, 'f', 2));
-
-    displaySalesDetails(getMonthlySalesDetails(year, month));
-    displayProductSalesRanking(getProductSalesRanking(year, month));
-
-    updateStatus(QString("已刷新 %1年%2月 统计数据").arg(year).arg(month));
-}
-
-// ========== 明细查询接口实现 ==========
-
-QList<SalesOrderInfo> InventoryWidget::getMonthlySalesDetails(int year, int month)
-{
-    QDateTime startDate(QDate(year, month, 1), QTime(0, 0, 0));
-    QDateTime endDate = startDate.addMonths(1).addSecs(-1);
-    return DatabaseManager::instance().getSalesReport(startDate, endDate);
-}
-
-QList<ProductSalesStat> InventoryWidget::getProductSalesRanking(int year, int month, int limit)
-{
-    QDateTime startDate(QDate(year, month, 1), QTime(0, 0, 0));
-    QDateTime endDate = startDate.addMonths(1).addSecs(-1);
-    return DatabaseManager::instance().getProductSalesRanking(startDate, endDate, limit);
-}
-
-// ========== UI 槽函数实现 ==========
-
-void InventoryWidget::onSearchButtonClicked()
-{
-    QString keyword = ui->searchLineEdit->text().trimmed();
-    searchProductByName(keyword);
-}
-
-void InventoryWidget::onRefreshButtonClicked()
-{
-    ui->searchLineEdit->clear();
-    refreshInventoryData();
-    updateStatus("数据已刷新");
-}
-
-void InventoryWidget::onAddButtonClicked()
-{
-    ProductInfo newProduct;
-    if (showAddProductDialog(newProduct)) {
-        addProduct(newProduct);
-    }
-}
-
-void InventoryWidget::onEditButtonClicked()
-{
-    int productId = getCurrentSelectedProductId();
-    if (productId < 0) {
+    int currentRow = m_tableWidget->currentRow();
+    if (currentRow < 0) {
         QMessageBox::warning(this, "提示", "请先选择要编辑的商品");
         return;
     }
 
-    ProductInfo product = DatabaseManager::instance().getProductById(productId);
-    if (showEditProductDialog(product)) {
-        updateProduct(productId, product);
-    }
+    int productId = m_tableWidget->item(currentRow, 0)->text().toInt();
+    QString currentName = m_tableWidget->item(currentRow, 1)->text();
+    QString currentCategory = m_tableWidget->item(currentRow, 2)->text();
+    double currentPrice = m_tableWidget->item(currentRow, 3)->text().toDouble();
+    int currentStock = m_tableWidget->item(currentRow, 4)->text().toInt();
+    QString currentUnit = m_tableWidget->item(currentRow, 5)->text();
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("编辑商品");
+    dialog.setFixedSize(350, 300);
+
+    QFormLayout* form = new QFormLayout(&dialog);
+    QLineEdit* nameEdit = new QLineEdit(currentName, &dialog);
+    QLineEdit* categoryEdit = new QLineEdit(currentCategory, &dialog);
+    QDoubleSpinBox* priceSpin = new QDoubleSpinBox(&dialog);
+    priceSpin->setRange(0, 999999);
+    priceSpin->setPrefix("¥");
+    priceSpin->setValue(currentPrice);
+    QSpinBox* stockSpin = new QSpinBox(&dialog);
+    stockSpin->setRange(0, 99999);
+    stockSpin->setValue(currentStock);
+    QLineEdit* unitEdit = new QLineEdit(currentUnit, &dialog);
+
+    form->addRow("商品名称:", nameEdit);
+    form->addRow("分类:", categoryEdit);
+    form->addRow("售价:", priceSpin);
+    form->addRow("库存:", stockSpin);
+    form->addRow("单位:", unitEdit);
+
+    QPushButton* submitBtn = new QPushButton("确定", &dialog);
+    QPushButton* cancelBtn = new QPushButton("取消", &dialog);
+    QHBoxLayout* btnLayout = new QHBoxLayout();
+    btnLayout->addWidget(submitBtn);
+    btnLayout->addWidget(cancelBtn);
+    form->addRow(btnLayout);
+
+    connect(submitBtn, &QPushButton::clicked, [&]() {
+        if (nameEdit->text().isEmpty()) {
+            QMessageBox::warning(&dialog, "提示", "请输入商品名称");
+            return;
+        }
+        QVariantMap product;
+        product["name"] = nameEdit->text();
+        product["category"] = categoryEdit->text();
+        product["salePrice"] = priceSpin->value();
+        product["quantity"] = stockSpin->value();
+        product["unit"] = unitEdit->text();
+        emit updateProductRequested(productId, product);
+        dialog.accept();
+    });
+    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
 }
 
-void InventoryWidget::onDeleteButtonClicked()
+void InventoryWidget::onDeleteClicked()
 {
-    int row = ui->inventoryTable->currentRow();
-    if (row < 0) {
+    int currentRow = m_tableWidget->currentRow();
+    if (currentRow < 0) {
         QMessageBox::warning(this, "提示", "请先选择要删除的商品");
         return;
     }
 
-    QString productName = ui->inventoryTable->item(row, 1)->text();
+    int productId = m_tableWidget->item(currentRow, 0)->text().toInt();
+    QString productName = m_tableWidget->item(currentRow, 1)->text();
+
     QMessageBox::StandardButton reply = QMessageBox::question(
         this, "确认删除",
-        QString("确定要删除商品 \"%1\" 吗？").arg(productName),
-        QMessageBox::Yes | QMessageBox::No);
+        QString("确定要删除商品「%1」吗？").arg(productName),
+        QMessageBox::Yes | QMessageBox::No
+        );
 
     if (reply == QMessageBox::Yes) {
-        int productId = ui->inventoryTable->item(row, 0)->text().toInt();
-        deleteProduct(productId);
+        emit deleteProductRequested(productId);
     }
 }
 
-void InventoryWidget::onAdjustButtonClicked()
+void InventoryWidget::onRegisterAdminClicked()
 {
-    int row = ui->inventoryTable->currentRow();
-    if (row < 0) {
-        QMessageBox::warning(this, "提示", "请先选择要盘点的商品");
-        return;
-    }
-
-    int productId = ui->inventoryTable->item(row, 0)->text().toInt();
-    int currentQuantity = ui->inventoryTable->item(row, 3)->text().toInt();
-    QString productName = ui->inventoryTable->item(row, 1)->text();
-
-    int newQuantity;
-    if (showStockAdjustDialog(productId, currentQuantity, newQuantity)) {
-        updateStock(productId, newQuantity);
+    bool ok;
+    QString code = QInputDialog::getText(this, "注册管理员",
+                                         "请输入管理员验证码:",
+                                         QLineEdit::Password,
+                                         "", &ok);
+    if (ok && !code.isEmpty()) {
+        emit adminRegisterRequested(code);
     }
 }
 
-void InventoryWidget::onTableItemDoubleClicked(QTableWidgetItem *item)
+void InventoryWidget::onTableItemDoubleClicked(int row, int col)
 {
-    Q_UNUSED(item);
-    onEditButtonClicked();
+    Q_UNUSED(col)
+    int productId = m_tableWidget->item(row, 0)->text().toInt();
+    emit productSelected(productId);
 }
 
-void InventoryWidget::onQueryStatsButtonClicked()
+// ========== 后端调用的槽 ==========
+
+void InventoryWidget::onInventoryLoaded(const QList<QVariantMap>& products)
 {
-    QDate selectedDate = ui->monthSelect->date();
-    refreshStatistics(selectedDate.year(), selectedDate.month());
-}
-
-// ========== 内部辅助函数 ==========
-
-void InventoryWidget::displayProducts(const QList<ProductInfo> &products)
-{
-    clearTable();
-    m_currentProducts = products;
-
-    for (int i = 0; i < products.size(); ++i) {
-        ui->inventoryTable->insertRow(i);
-        addRowToTable(products[i], i);
+    m_tableWidget->setRowCount(products.size());
+    for (int i = 0; i < products.size(); i++) {
+        const QVariantMap& p = products[i];
+        m_tableWidget->setItem(i, 0, new QTableWidgetItem(QString::number(p["id"].toInt())));
+        m_tableWidget->setItem(i, 1, new QTableWidgetItem(p["name"].toString()));
+        m_tableWidget->setItem(i, 2, new QTableWidgetItem(p["category"].toString()));
+        m_tableWidget->setItem(i, 3, new QTableWidgetItem(QString::number(p["salePrice"].toDouble())));
+        m_tableWidget->setItem(i, 4, new QTableWidgetItem(QString::number(p["quantity"].toInt())));
+        m_tableWidget->setItem(i, 5, new QTableWidgetItem(p["unit"].toString()));
     }
 }
 
-void InventoryWidget::addRowToTable(const ProductInfo &product, int row)
+void InventoryWidget::onSearchResult(const QList<QVariantMap>& products)
 {
-    ui->inventoryTable->setItem(row, 0, new QTableWidgetItem(QString::number(product.id)));
-    ui->inventoryTable->setItem(row, 1, new QTableWidgetItem(product.name));
-    ui->inventoryTable->setItem(row, 2, new QTableWidgetItem(product.category));
-    ui->inventoryTable->setItem(row, 3, new QTableWidgetItem(QString::number(product.quantity)));
-    ui->inventoryTable->setItem(row, 4, new QTableWidgetItem(QString::number(product.purchasePrice, 'f', 2)));
-    ui->inventoryTable->setItem(row, 5, new QTableWidgetItem(QString::number(product.salePrice, 'f', 2)));
-    ui->inventoryTable->setItem(row, 6, new QTableWidgetItem(product.unit));
+    onInventoryLoaded(products);
 }
 
-ProductInfo InventoryWidget::getProductFromCurrentRow() const
-{
-    ProductInfo product;
-    int row = ui->inventoryTable->currentRow();
-    if (row >= 0) {
-        product.id = ui->inventoryTable->item(row, 0)->text().toInt();
-        product.name = ui->inventoryTable->item(row, 1)->text();
-        product.category = ui->inventoryTable->item(row, 2)->text();
-        product.quantity = ui->inventoryTable->item(row, 3)->text().toInt();
-        product.purchasePrice = ui->inventoryTable->item(row, 4)->text().toDouble();
-        product.salePrice = ui->inventoryTable->item(row, 5)->text().toDouble();
-        product.unit = ui->inventoryTable->item(row, 6)->text();
-    }
-    return product;
-}
-
-void InventoryWidget::displaySalesDetails(const QList<SalesOrderInfo> &orders)
-{
-    ui->salesDetailTable->setRowCount(0);
-    m_currentSalesDetails = orders;
-
-    for (int i = 0; i < orders.size(); ++i) {
-        ui->salesDetailTable->insertRow(i);
-        addSalesRowToTable(orders[i], i);
-    }
-}
-
-void InventoryWidget::addSalesRowToTable(const SalesOrderInfo &order, int row)
-{
-    ui->salesDetailTable->setItem(row, 0, new QTableWidgetItem(QString::number(order.id)));
-    ui->salesDetailTable->setItem(row, 1, new QTableWidgetItem(QString::number(order.totalAmount, 'f', 2)));
-    ui->salesDetailTable->setItem(row, 2, new QTableWidgetItem(order.address));
-    ui->salesDetailTable->setItem(row, 3, new QTableWidgetItem(order.remark));
-    ui->salesDetailTable->setItem(row, 4, new QTableWidgetItem(order.createdAt.toString("yyyy-MM-dd")));
-}
-
-void InventoryWidget::displayProductSalesRanking(const QList<ProductSalesStat> &stats)
-{
-    ui->productSalesTable->setRowCount(0);
-    m_currentProductSalesRank = stats;
-
-    for (int i = 0; i < stats.size(); ++i) {
-        ui->productSalesTable->insertRow(i);
-        addProductSalesRowToTable(stats[i], i, i + 1);
-    }
-}
-
-void InventoryWidget::addProductSalesRowToTable(const ProductSalesStat &stat, int row, int rank)
-{
-    ui->productSalesTable->setItem(row, 0, new QTableWidgetItem(QString::number(rank)));
-    ui->productSalesTable->setItem(row, 1, new QTableWidgetItem(QString::number(stat.productId)));
-    ui->productSalesTable->setItem(row, 2, new QTableWidgetItem(stat.productName));
-    ui->productSalesTable->setItem(row, 3, new QTableWidgetItem(QString::number(stat.totalQuantity)));
-    ui->productSalesTable->setItem(row, 4, new QTableWidgetItem(QString::number(stat.totalAmount, 'f', 2)));
-}
-
-void InventoryWidget::getCurrentYearMonth(int &year, int &month)
-{
-    QDate current = ui->monthSelect->date();
-    year = current.year();
-    month = current.month();
-}
-
-void InventoryWidget::updateStatus(const QString &message)
-{
-    ui->statusLabel->setText(message);
-}
-
-void InventoryWidget::showError(const QString &message)
-{
-    QMessageBox::critical(this, "错误", message);
-    updateStatus("错误: " + message);
-}
-
-void InventoryWidget::showSuccess(const QString &message)
+void InventoryWidget::onOperationSuccess(const QString& message)
 {
     QMessageBox::information(this, "成功", message);
-    updateStatus(message);
+    emit refreshRequested();
 }
 
-// ========== 对话框实现 ==========
-
-bool InventoryWidget::showAddProductDialog(ProductInfo &product)
+void InventoryWidget::onOperationError(const QString& error)
 {
-    QDialog dialog(this);
-    dialog.setWindowTitle("新增商品");
-    dialog.setMinimumWidth(400);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
-    QFormLayout *formLayout = new QFormLayout();
-
-    QLineEdit *nameEdit = new QLineEdit();
-    QLineEdit *categoryEdit = new QLineEdit();
-    QLineEdit *purchaseEdit = new QLineEdit();
-    QLineEdit *saleEdit = new QLineEdit();
-    QLineEdit *unitEdit = new QLineEdit("件");
-
-    purchaseEdit->setValidator(new QDoubleValidator(0, 999999, 2, purchaseEdit));
-    saleEdit->setValidator(new QDoubleValidator(0, 999999, 2, saleEdit));
-
-    formLayout->addRow("商品名称:", nameEdit);
-    formLayout->addRow("分类:", categoryEdit);
-    formLayout->addRow("进价:", purchaseEdit);
-    formLayout->addRow("售价:", saleEdit);
-    formLayout->addRow("单位:", unitEdit);
-
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    QPushButton *okButton = new QPushButton("确定");
-    QPushButton *cancelButton = new QPushButton("取消");
-    buttonLayout->addWidget(okButton);
-    buttonLayout->addWidget(cancelButton);
-
-    mainLayout->addLayout(formLayout);
-    mainLayout->addLayout(buttonLayout);
-
-    connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
-    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    if (dialog.exec() == QDialog::Accepted) {
-        if (nameEdit->text().isEmpty()) {
-            QMessageBox::warning(this, "提示", "商品名称不能为空");
-            return false;
-        }
-        product.name = nameEdit->text();
-        product.category = categoryEdit->text();
-        product.purchasePrice = purchaseEdit->text().toDouble();
-        product.salePrice = saleEdit->text().toDouble();
-        product.unit = unitEdit->text();
-        return true;
-    }
-    return false;
+    QMessageBox::warning(this, "失败", error);
 }
 
-bool InventoryWidget::showEditProductDialog(ProductInfo &product)
+void InventoryWidget::onAdminRegisterResult(bool success, const QString& message)
 {
-    QDialog dialog(this);
-    dialog.setWindowTitle("编辑商品");
-    dialog.setMinimumWidth(400);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
-    QFormLayout *formLayout = new QFormLayout();
-
-    QLineEdit *nameEdit = new QLineEdit(product.name);
-    QLineEdit *categoryEdit = new QLineEdit(product.category);
-    QLineEdit *purchaseEdit = new QLineEdit(QString::number(product.purchasePrice));
-    QLineEdit *saleEdit = new QLineEdit(QString::number(product.salePrice));
-    QLineEdit *unitEdit = new QLineEdit(product.unit);
-
-    purchaseEdit->setValidator(new QDoubleValidator(0, 999999, 2, purchaseEdit));
-    saleEdit->setValidator(new QDoubleValidator(0, 999999, 2, saleEdit));
-
-    formLayout->addRow("商品ID:", new QLabel(QString::number(product.id)));
-    formLayout->addRow("商品名称:", nameEdit);
-    formLayout->addRow("分类:", categoryEdit);
-    formLayout->addRow("进价:", purchaseEdit);
-    formLayout->addRow("售价:", saleEdit);
-    formLayout->addRow("单位:", unitEdit);
-
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    QPushButton *okButton = new QPushButton("确定");
-    QPushButton *cancelButton = new QPushButton("取消");
-    buttonLayout->addWidget(okButton);
-    buttonLayout->addWidget(cancelButton);
-
-    mainLayout->addLayout(formLayout);
-    mainLayout->addLayout(buttonLayout);
-
-    connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
-    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    if (dialog.exec() == QDialog::Accepted) {
-        if (nameEdit->text().isEmpty()) {
-            QMessageBox::warning(this, "提示", "商品名称不能为空");
-            return false;
-        }
-        product.name = nameEdit->text();
-        product.category = categoryEdit->text();
-        product.purchasePrice = purchaseEdit->text().toDouble();
-        product.salePrice = saleEdit->text().toDouble();
-        product.unit = unitEdit->text();
-        return true;
+    if (success) {
+        QMessageBox::information(this, "注册成功", "注册管理员成功，请重新登录");
+        emit logoutRequested();
+    } else {
+        QMessageBox::warning(this, "注册失败", message);
     }
-    return false;
-}
-
-bool InventoryWidget::showStockAdjustDialog(int productId, int currentQuantity, int &newQuantity)
-{
-    QDialog dialog(this);
-    dialog.setWindowTitle("库存盘点");
-
-    QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
-    QFormLayout *formLayout = new QFormLayout();
-
-    formLayout->addRow("商品ID:", new QLabel(QString::number(productId)));
-    formLayout->addRow("当前库存:", new QLabel(QString::number(currentQuantity)));
-
-    QLineEdit *newQuantityEdit = new QLineEdit();
-    newQuantityEdit->setValidator(new QIntValidator(0, 99999, newQuantityEdit));
-    newQuantityEdit->setPlaceholderText("请输入盘点后的实际数量");
-    formLayout->addRow("盘点后库存:", newQuantityEdit);
-
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    QPushButton *okButton = new QPushButton("确定");
-    QPushButton *cancelButton = new QPushButton("取消");
-    buttonLayout->addWidget(okButton);
-    buttonLayout->addWidget(cancelButton);
-
-    mainLayout->addLayout(formLayout);
-    mainLayout->addLayout(buttonLayout);
-
-    connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
-    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    if (dialog.exec() == QDialog::Accepted) {
-        newQuantity = newQuantityEdit->text().toInt();
-        return true;
-    }
-    return false;
 }

@@ -7,70 +7,12 @@
     <x>0</x>
     <y>0</y>
     <width>900</width>
-    <height>650</height>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>地址管理</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
-    <widget class="QLabel" name="titleLabel">
-     <property name="font">
-      <font>
-       <pointsize>16</pointsize>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>📍 收货地址</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QFrame" name="line">
-     <property name="frameShape">
-      <enum>QFrame::HLine</enum>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="addButton">
-     <property name="text">
-      <string>➕ 新增地址</string>
-     </property>
-     <property name="minimumWidth">
-      <number>120</number>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QTableWidget" name="addressTable">
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="statusLabel">
-     <property name="text">
-      <string>就绪</string>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-    </widget>
-   </item>
-  </layout>
  </widget>
  <resources/>
  <connections/>
