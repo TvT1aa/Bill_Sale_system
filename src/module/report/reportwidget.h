@@ -1,83 +1,71 @@
 #ifndef REPORTWIDGET_H
 #define REPORTWIDGET_H
-#include "module/inventory/inventorywidget.h"
+
 #include <QWidget>
-#include <QTableWidgetItem>
-#include <QDate>
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class ReportWidget; }
-QT_END_NAMESPACE
-
-// 销售记录结构体
-struct SalesReportItem {
-    int id;
-    QString orderNo;
-    QString productName;
-    int quantity;
-    double price;
-    double total;
-    QString customer;
-    QString saleTime;
-};
-
-// 日报表结构体
-struct DailySalesStat {
-    QDate date;
-    int orderCount;
-    double totalSales;
-    double totalCost;
-    double profit;
-};
-
-// 注意：ProductSalesStat 已在 inventorywidget.h 中定义，这里不再重复
+#include <QLabel>
+#include <QTableWidget>
+#include <QPushButton>
+#include <QDateTimeEdit>
+#include <QTabWidget>
 
 class ReportWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ReportWidget(QWidget *parent = nullptr);
+    explicit ReportWidget(int userId, QWidget *parent = nullptr);
     ~ReportWidget();
 
-    // ========== 统计接口 ==========
-    QList<SalesReportItem> getSalesReport(const QDate &startDate, const QDate &endDate);
-    QList<ProductSalesStat> getProductSalesRanking(const QDate &startDate, const QDate &endDate, int limit = 20);
-    QList<DailySalesStat> getDailySalesReport(const QDate &startDate, const QDate &endDate);
+signals:
+    // 向后端请求数据的信号
+    void refreshRequested();
+    void filterByDateRequested(const QDateTime& startDate, const QDateTime& endDate);
+    void exportReportRequested(const QString& format, const QDateTime& startDate, const QDateTime& endDate);
 
-    double getTotalSales(const QDate &startDate, const QDate &endDate);
-    double getTotalCost(const QDate &startDate, const QDate &endDate);
-    double getTotalProfit(const QDate &startDate, const QDate &endDate);
-    int getOrderCount(const QDate &startDate, const QDate &endDate);
-
-    void refreshReports(const QDate &startDate, const QDate &endDate);
-    bool exportToCSV(const QString &filePath);
+public slots:
+    // 后端调用的槽
+    void onSalesSummaryLoaded(double totalSales, double totalProfit, int orderCount);
+    void onDailySalesLoaded(const QList<QPair<QString, double>>& dailySales);
+    void onTopProductsLoaded(const QList<QVariantMap>& topProducts);
+    void onSalesOrdersLoaded(const QList<QVariantMap>& orders);
+    void onOperationError(const QString& error);
 
 private slots:
-    void onQueryButtonClicked();
-    void onExportButtonClicked();
+    void onFilterClicked();
+    void onExportExcel();
+    void onExportPdf();
+    void onRefreshClicked();
+    void onTabChanged(int index);
 
 private:
-    void setupTables();
-    void updateStatus(const QString &message);
-    void showError(const QString &message);
-    void showSuccess(const QString &message);
+    void setupUI();
+    void updateSummaryDisplay();
 
-    void displaySalesReport(const QList<SalesReportItem> &items, double total);
-    void displayProductSalesRanking(const QList<ProductSalesStat> &stats);
-    void displayDailySalesReport(const QList<DailySalesStat> &stats);
+    QTabWidget* m_tabWidget;
 
-    void addSalesRowToTable(const SalesReportItem &item, int row);
-    void addProductSalesRowToTable(const ProductSalesStat &stat, int row, int rank);
-    void addDailySalesRowToTable(const DailySalesStat &stat, int row);
+    // 概览页
+    QLabel* m_totalSalesLabel;
+    QLabel* m_totalProfitLabel;
+    QLabel* m_orderCountLabel;
 
-    void updateStatisticsCards(const QDate &startDate, const QDate &endDate);
+    // 销售趋势页
+    QTableWidget* m_dailySalesTable;
 
-private:
-    Ui::ReportWidget *ui;
-    QList<SalesReportItem> m_currentSalesReport;
-    QList<ProductSalesStat> m_currentProductRanking;
-    QList<DailySalesStat> m_currentDailyReport;
+    // 热销商品页
+    QTableWidget* m_topProductsTable;
+
+    // 订单明细页
+    QTableWidget* m_ordersTable;
+
+    // 日期筛选
+    QDateTimeEdit* m_startDateEdit;
+    QDateTimeEdit* m_endDateEdit;
+    QPushButton* m_filterBtn;
+    QPushButton* m_refreshBtn;
+    QPushButton* m_exportExcelBtn;
+    QPushButton* m_exportPdfBtn;
+
+    int m_userId;
 };
 
 #endif // REPORTWIDGET_H

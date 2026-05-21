@@ -10,6 +10,7 @@ project(BillandSale_system VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,13 +23,12 @@ set(PROJECT_SOURCES
         src/mainwindow.cpp
         src/mainwindow.h
         src/mainwindow.ui
-        #database 模块
-        src/common/database/databasemanager.cpp
-        src/common/database/database_user.cpp
-        src/common/database/databasemanager.h
-        src/common/database/database_products.cpp
-        src/common/database/database_addresses.cpp
-        src/common/database/database_inventory.cpp
+
+        # 主框架（新增）
+        src/module/homewidget.cpp
+        src/module/homewidget.h
+        src/module/homewidget.ui
+
         # Common 模块
         src/common/destuil.cpp
         src/common/desutil.h
@@ -36,9 +36,9 @@ set(PROJECT_SOURCES
         src/common/hashsha.h
         src/common/user.cpp
         src/common/user.h
-        src/common/passwordmanager.h
-        src/common/passwordmanager.cpp
-        # Login 模块 (View & Controller)
+
+        # Login 模块
+
         src/module/login/login_controllor.cpp
         src/module/login/login_controllor.h
         src/module/login/loginwidget.cpp
@@ -46,6 +46,7 @@ set(PROJECT_SOURCES
         src/module/login/loginwidget.ui
         src/module/login/registerwidget.cpp
         src/module/login/registerwidget.h
+        src/module/login/registerwidget.ui
 
         # Address 模块
         src/module/address/address_controllor.cpp
@@ -61,7 +62,7 @@ set(PROJECT_SOURCES
         src/module/balance/balancewidget.h
         src/module/balance/balancewidget.ui
 
-        # Cart_in 模块（包含入库控制器和购物车页面）
+        # Cart_in 模块
         src/module/cart_in/cart_controllor.cpp
         src/module/cart_in/cart_controllor.h
         src/module/cart_in/cartwidget.cpp
@@ -81,33 +82,36 @@ set(PROJECT_SOURCES
         src/module/inventory/inventorywidget.cpp
         src/module/inventory/inventorywidget.h
         src/module/inventory/inventorywidget.ui
-        src/module/inventory/admin_validation.cpp
-        src/module/inventory/admin_validation.h
-        src/module/inventory/admin_validation.ui
 
         # Report 模块
         src/module/report/reportwidget.cpp
         src/module/report/reportwidget.h
         src/module/report/reportwidget.ui
-        src/common/passwordmanager.cpp
 )
 
 qt_add_executable(BillandSale_system
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        )
+)
 
 target_include_directories(BillandSale_system PRIVATE
         src
         src/common
+        src/module
         src/module/login
+        src/module/address
+        src/module/balance
+        src/module/cart_in
+        src/module/deduct
+        src/module/inventory
+        src/module/report
         ${CMAKE_CURRENT_BINARY_DIR}
-        )
+)
 
 target_link_libraries(BillandSale_system PRIVATE
         Qt6::Widgets
         Qt6::Sql
-        )
+)
 
 if(WIN32 AND NOT CONAN_EXPORT_STAGE)
     get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
@@ -125,7 +129,7 @@ endif()
 
 set_target_properties(BillandSale_system PROPERTIES
         WIN32_EXECUTABLE TRUE
-        )
+)
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(BillandSale_system)

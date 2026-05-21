@@ -1,35 +1,36 @@
-// controllor.h
 #ifndef LOGIN_CONTROLLOR_H
 #define LOGIN_CONTROLLOR_H
 
 #include <QObject>
-#include "user.h"            // 必须连接：提供校验逻辑和哈希算法
-#include "database/databasemanager.h" // 必须连接：提供数据库读写
-#include "loginwidget.h"     // 必须连接：获取 UI 信号
-#include "desutil.h"
-#include "hashsha.h"
-class login_controllor : public QObject {
+#include <QString>
+
+class LoginWidget;
+
+class login_controllor : public QObject
+{
     Q_OBJECT
+
 public:
     explicit login_controllor(QObject *parent = nullptr);
+    void setView(LoginWidget *view);
 
-    explicit login_controllor(LoginWidget *m_view) : m_view(m_view) {}
-    // 构建核心：注入界面指针并绑定信号
-    void setView(LoginWidget* view);
+    bool login(const QString& username, const QString& password);
+    bool registerUser(const QString& username, const QString& email,
+                      const QString& phone, const QString& password);
+    void logout();
 
-private slots:
-    // 这里的参数必须对应 LoginWidget 的信号参数
-    // controllor.h
-private slots:
-    void onHandleRegister(const QString &u, const QString &e,
-                          const QString &ph, const QString &p,
-                          const QString &cp);
+    int getCurrentUserId() const { return m_currentUserId; }
+    QString getCurrentUsername() const { return m_currentUsername; }
+    bool isLoggedIn() const { return m_currentUserId > 0; }
 
-    void onHandleLogin(const QString &username, const QString &password);
+signals:
+    void loginSuccess(int userId, const QString& username);
+    void loginFailed(const QString& error);
 
 private:
     LoginWidget* m_view;
-
+    int m_currentUserId;
+    QString m_currentUsername;
 };
 
-#endif
+#endif // LOGIN_CONTROLLOR_H
