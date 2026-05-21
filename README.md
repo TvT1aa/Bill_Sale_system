@@ -1,7 +1,7 @@
 # Bill_Sale_system
 
 ---
-项目：需要完成的模块有七个，分别是**login(登录)**,**inventory(库存管理)**,**cart_in(入库)**,**deduct(扣减，出库)**,**address(地址)**,**balance(余额)**,**report(报表)**
+项目：需要完成的模块有七个，分别是**login(登录)**,**inventory(库存管理)**,**cart_in(购物车)**,**deduct(扣减，出库)**,**address(地址)**,**balance(余额)**,**report(报表)**
 
 ---
 
@@ -15,7 +15,7 @@ BillandSale_system/
 ├── module/                  # 【业务层】按功能拆分的独立模块  
 │   ├── address/             # 地址管理  
 │   ├── balance/             # 账务余额  
-│   ├── cart_in/             # 采购/入库逻辑  
+│   ├── cart_in/             # 购物车逻辑  
 │   ├── deduct/              # 销售/库存扣减  
 │   ├── inventory/           # 库存盘点与查询  
 │   ├── login/               # 登录/注册模块（当前核心）  

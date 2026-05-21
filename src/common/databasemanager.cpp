@@ -1,9 +1,14 @@
+
+
 #include "databasemanager.h"
 #include "hashsha.h"
 #include <QCoreApplication>
 #include <QSqlError>
 #include <QSqlRecord>
 #include <QDebug>
+#include <QFile>
+#include <QTextStream>
+#include <QRegularExpression>
 
 static const char* DB_CONNECTION_NAME = "BillandSale_connection";
 
