@@ -1,238 +1,227 @@
 #include "reportwidget.h"
-#include "ui_reportwidget.h"
-#include "common/databasemanager.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QHeaderView>
 #include <QMessageBox>
-#include <QFileDialog>
-#include <QFile>
-#include <QTextStream>
-#include <QDateTime>
-#include <QDebug>
+#include <QGroupBox>
+#include <QFormLayout>
 
-ReportWidget::ReportWidget(QWidget *parent)
+ReportWidget::ReportWidget(int userId, QWidget *parent)
     : QWidget(parent)
-    , ui(new Ui::ReportWidget)
+    , m_userId(userId)
 {
-    ui->setupUi(this);
-    setupTables();
-
-    connect(ui->queryButton, &QPushButton::clicked, this, &ReportWidget::onQueryButtonClicked);
-    connect(ui->exportButton, &QPushButton::clicked, this, &ReportWidget::onExportButtonClicked);
-
-    QDateTime endDate = QDateTime::currentDateTime();
-    QDateTime startDate = endDate.addDays(-30);
-    ui->startDateEdit->setDateTime(startDate);
-    ui->endDateEdit->setDateTime(endDate);
-
-    refreshReports(startDate, endDate);
-    updateStatus("就绪");
+    setupUI();
+    emit refreshRequested();
 }
 
 ReportWidget::~ReportWidget()
 {
-    delete ui;
 }
 
-void ReportWidget::setupTables()
+void ReportWidget::setupUI()
 {
-    QStringList salesHeaders = {"订单号", "用户ID", "总金额", "地址", "备注", "下单时间"};
-    ui->salesTable->setColumnCount(salesHeaders.size());
-    ui->salesTable->setHorizontalHeaderLabels(salesHeaders);
-    ui->salesTable->setColumnWidth(0, 100);
-    ui->salesTable->setColumnWidth(1, 80);
-    ui->salesTable->setColumnWidth(2, 100);
-    ui->salesTable->setColumnWidth(3, 200);
-    ui->salesTable->setColumnWidth(4, 150);
-    ui->salesTable->setColumnWidth(5, 150);
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(10);
 
-    QStringList rankHeaders = {"排名", "商品ID", "商品名称", "销售数量", "销售金额"};
-    ui->productSalesTable->setColumnCount(rankHeaders.size());
-    ui->productSalesTable->setHorizontalHeaderLabels(rankHeaders);
-    ui->productSalesTable->setColumnWidth(0, 60);
-    ui->productSalesTable->setColumnWidth(1, 80);
-    ui->productSalesTable->setColumnWidth(2, 200);
-    ui->productSalesTable->setColumnWidth(3, 100);
-    ui->productSalesTable->setColumnWidth(4, 120);
+    // 顶部筛选栏
+    QHBoxLayout* topLayout = new QHBoxLayout();
 
-    QStringList dailyHeaders = {"日期", "销售额"};
-    ui->dailySalesTable->setColumnCount(dailyHeaders.size());
-    ui->dailySalesTable->setHorizontalHeaderLabels(dailyHeaders);
-    ui->dailySalesTable->setColumnWidth(0, 120);
-    ui->dailySalesTable->setColumnWidth(1, 120);
+    QLabel* dateLabel = new QLabel("日期范围:", this);
+    m_startDateEdit = new QDateTimeEdit(this);
+    m_startDateEdit->setCalendarPopup(true);
+    m_startDateEdit->setDateTime(QDateTime::currentDateTime().addDays(-30));
+    m_endDateEdit = new QDateTimeEdit(this);
+    m_endDateEdit->setCalendarPopup(true);
+    m_endDateEdit->setDateTime(QDateTime::currentDateTime());
 
-    QList<QTableWidget*> tables = {ui->salesTable, ui->productSalesTable, ui->dailySalesTable};
-    for (QTableWidget *table : tables) {
-        table->setAlternatingRowColors(true);
-        table->setSelectionBehavior(QAbstractItemView::SelectRows);
-        table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_filterBtn = new QPushButton("筛选", this);
+    m_filterBtn->setFixedSize(80, 32);
+    m_refreshBtn = new QPushButton("刷新", this);
+    m_refreshBtn->setFixedSize(80, 32);
+
+    m_exportExcelBtn = new QPushButton("导出Excel", this);
+    m_exportExcelBtn->setFixedSize(100, 32);
+    m_exportExcelBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; }");
+
+    m_exportPdfBtn = new QPushButton("导出PDF", this);
+    m_exportPdfBtn->setFixedSize(100, 32);
+    m_exportPdfBtn->setStyleSheet("QPushButton { background-color: #F56C6C; color: white; border-radius: 4px; }");
+
+    topLayout->addWidget(dateLabel);
+    topLayout->addWidget(m_startDateEdit);
+    topLayout->addWidget(m_endDateEdit);
+    topLayout->addWidget(m_filterBtn);
+    topLayout->addWidget(m_refreshBtn);
+    topLayout->addStretch();
+    topLayout->addWidget(m_exportExcelBtn);
+    topLayout->addWidget(m_exportPdfBtn);
+
+    mainLayout->addLayout(topLayout);
+
+    // 标签页
+    m_tabWidget = new QTabWidget(this);
+    mainLayout->addWidget(m_tabWidget);
+
+    // ========== 概览页 ==========
+    QWidget* summaryWidget = new QWidget();
+    QVBoxLayout* summaryLayout = new QVBoxLayout(summaryWidget);
+
+    QGroupBox* summaryGroup = new QGroupBox("销售概览");
+    QGridLayout* summaryGrid = new QGridLayout(summaryGroup);
+
+    QLabel* salesLabel = new QLabel("总销售额:");
+    m_totalSalesLabel = new QLabel("¥0.00");
+    m_totalSalesLabel->setStyleSheet("QLabel { font-size: 24px; font-weight: bold; color: #F56C6C; }");
+
+    QLabel* profitLabel = new QLabel("总利润:");
+    m_totalProfitLabel = new QLabel("¥0.00");
+    m_totalProfitLabel->setStyleSheet("QLabel { font-size: 24px; font-weight: bold; color: #67C23A; }");
+
+    QLabel* countLabel = new QLabel("订单数量:");
+    m_orderCountLabel = new QLabel("0");
+    m_orderCountLabel->setStyleSheet("QLabel { font-size: 24px; font-weight: bold; color: #409EFF; }");
+
+    summaryGrid->addWidget(salesLabel, 0, 0);
+    summaryGrid->addWidget(m_totalSalesLabel, 0, 1);
+    summaryGrid->addWidget(profitLabel, 1, 0);
+    summaryGrid->addWidget(m_totalProfitLabel, 1, 1);
+    summaryGrid->addWidget(countLabel, 2, 0);
+    summaryGrid->addWidget(m_orderCountLabel, 2, 1);
+
+    summaryLayout->addWidget(summaryGroup);
+    summaryLayout->addStretch();
+
+    m_tabWidget->addTab(summaryWidget, "📊 销售概览");
+
+    // ========== 销售趋势页 ==========
+    QWidget* trendWidget = new QWidget();
+    QVBoxLayout* trendLayout = new QVBoxLayout(trendWidget);
+
+    m_dailySalesTable = new QTableWidget();
+    m_dailySalesTable->setColumnCount(2);
+    m_dailySalesTable->setHorizontalHeaderLabels({"日期", "销售额"});
+    m_dailySalesTable->horizontalHeader()->setStretchLastSection(true);
+    m_dailySalesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_dailySalesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    trendLayout->addWidget(m_dailySalesTable);
+    m_tabWidget->addTab(trendWidget, "📈 销售趋势");
+
+    // ========== 热销商品页 ==========
+    QWidget* topProductsWidget = new QWidget();
+    QVBoxLayout* topProductsLayout = new QVBoxLayout(topProductsWidget);
+
+    m_topProductsTable = new QTableWidget();
+    m_topProductsTable->setColumnCount(4);
+    m_topProductsTable->setHorizontalHeaderLabels({"排名", "商品名称", "销量", "销售额"});
+    m_topProductsTable->horizontalHeader()->setStretchLastSection(true);
+    m_topProductsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_topProductsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    topProductsLayout->addWidget(m_topProductsTable);
+    m_tabWidget->addTab(topProductsWidget, "🏆 热销商品");
+
+    // ========== 订单明细页 ==========
+    QWidget* ordersWidget = new QWidget();
+    QVBoxLayout* ordersLayout = new QVBoxLayout(ordersWidget);
+
+    m_ordersTable = new QTableWidget();
+    m_ordersTable->setColumnCount(6);
+    m_ordersTable->setHorizontalHeaderLabels({"订单ID", "用户", "总金额", "状态", "创建时间", "备注"});
+    m_ordersTable->horizontalHeader()->setStretchLastSection(true);
+    m_ordersTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_ordersTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    ordersLayout->addWidget(m_ordersTable);
+    m_tabWidget->addTab(ordersWidget, "📋 订单明细");
+
+    // 连接信号
+    connect(m_filterBtn, &QPushButton::clicked, this, &ReportWidget::onFilterClicked);
+    connect(m_refreshBtn, &QPushButton::clicked, this, &ReportWidget::onRefreshClicked);
+    connect(m_exportExcelBtn, &QPushButton::clicked, this, &ReportWidget::onExportExcel);
+    connect(m_exportPdfBtn, &QPushButton::clicked, this, &ReportWidget::onExportPdf);
+    connect(m_tabWidget, &QTabWidget::currentChanged, this, &ReportWidget::onTabChanged);
+}
+
+void ReportWidget::onFilterClicked()
+{
+    QDateTime startDate = m_startDateEdit->dateTime();
+    QDateTime endDate = m_endDateEdit->dateTime();
+    emit filterByDateRequested(startDate, endDate);
+}
+
+void ReportWidget::onRefreshClicked()
+{
+    emit refreshRequested();
+}
+
+void ReportWidget::onExportExcel()
+{
+    QDateTime startDate = m_startDateEdit->dateTime();
+    QDateTime endDate = m_endDateEdit->dateTime();
+    emit exportReportRequested("excel", startDate, endDate);
+}
+
+void ReportWidget::onExportPdf()
+{
+    QDateTime startDate = m_startDateEdit->dateTime();
+    QDateTime endDate = m_endDateEdit->dateTime();
+    emit exportReportRequested("pdf", startDate, endDate);
+}
+
+void ReportWidget::onTabChanged(int index)
+{
+    Q_UNUSED(index)
+    // 切换标签页时刷新对应数据
+    emit refreshRequested();
+}
+
+// ========== 后端调用的槽 ==========
+
+void ReportWidget::onSalesSummaryLoaded(double totalSales, double totalProfit, int orderCount)
+{
+    m_totalSalesLabel->setText(QString("¥%1").arg(totalSales, 0, 'f', 2));
+    m_totalProfitLabel->setText(QString("¥%1").arg(totalProfit, 0, 'f', 2));
+    m_orderCountLabel->setText(QString::number(orderCount));
+}
+
+void ReportWidget::onDailySalesLoaded(const QList<QPair<QString, double>>& dailySales)
+{
+    m_dailySalesTable->setRowCount(dailySales.size());
+    for (int i = 0; i < dailySales.size(); i++) {
+        m_dailySalesTable->setItem(i, 0, new QTableWidgetItem(dailySales[i].first));
+        m_dailySalesTable->setItem(i, 1, new QTableWidgetItem(QString("¥%1").arg(dailySales[i].second, 0, 'f', 2)));
     }
 }
 
-void ReportWidget::refreshReports(const QDateTime &startDate, const QDateTime &endDate)
+void ReportWidget::onTopProductsLoaded(const QList<QVariantMap>& topProducts)
 {
-    updateStatisticsCards(startDate, endDate);
-
-    QList<SalesOrderInfo> orders = DatabaseManager::instance().getSalesReport(startDate, endDate);
-    double totalSales = DatabaseManager::instance().getTotalSales(startDate, endDate);
-    displaySalesReport(orders, totalSales);
-
-    QList<ProductSalesStat> ranking = DatabaseManager::instance().getProductSalesRanking(startDate, endDate);
-    displayProductSalesRanking(ranking);
-
-    QList<QPair<QDate, double>> dailyReport = DatabaseManager::instance().getDailySalesReport(startDate, endDate);
-    displayDailySalesReport(dailyReport);
-
-    updateStatus(QString("已刷新报表：%1 至 %2")
-                     .arg(startDate.toString("yyyy-MM-dd"))
-                     .arg(endDate.toString("yyyy-MM-dd")));
-}
-
-bool ReportWidget::exportToCSV(const QString &filePath)
-{
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        showError("无法创建文件");
-        return false;
-    }
-
-    QTextStream stream(&file);
-    stream.setEncoding(QStringConverter::Utf8);
-
-    stream << "=== 销售报表 ===\n";
-    stream << "订单号,用户ID,总金额,地址,备注,下单时间\n";
-    for (const SalesOrderInfo &order : m_currentSalesReport) {
-        stream << order.id << ","
-               << order.userId << ","
-               << order.totalAmount << ","
-               << order.address << ","
-               << order.remark << ","
-               << order.createdAt.toString("yyyy-MM-dd hh:mm:ss") << "\n";
-    }
-
-    stream << "\n=== 商品销售排行 ===\n";
-    stream << "排名,商品ID,商品名称,销售数量,销售金额\n";
-    for (int i = 0; i < m_currentProductRanking.size(); ++i) {
-        const ProductSalesStat &stat = m_currentProductRanking[i];
-        stream << (i + 1) << ","
-               << stat.productId << ","
-               << stat.productName << ","
-               << stat.totalQuantity << ","
-               << stat.totalAmount << "\n";
-    }
-
-    file.close();
-    return true;
-}
-
-void ReportWidget::onQueryButtonClicked()
-{
-    QDateTime startDate = ui->startDateEdit->dateTime();
-    QDateTime endDate = ui->endDateEdit->dateTime();
-
-    if (startDate > endDate) {
-        showError("开始日期不能大于结束日期");
-        return;
-    }
-
-    refreshReports(startDate, endDate);
-}
-
-void ReportWidget::onExportButtonClicked()
-{
-    QString filePath = QFileDialog::getSaveFileName(this, "导出报表",
-                                                    QString("报表_%1.csv").arg(QDate::currentDate().toString("yyyyMMdd")),
-                                                    "CSV文件 (*.csv)");
-
-    if (!filePath.isEmpty()) {
-        if (exportToCSV(filePath)) {
-            showSuccess(QString("报表已导出到：%1").arg(filePath));
-        }
+    m_topProductsTable->setRowCount(topProducts.size());
+    for (int i = 0; i < topProducts.size(); i++) {
+        const QVariantMap& product = topProducts[i];
+        m_topProductsTable->setItem(i, 0, new QTableWidgetItem(QString::number(i + 1)));
+        m_topProductsTable->setItem(i, 1, new QTableWidgetItem(product["name"].toString()));
+        m_topProductsTable->setItem(i, 2, new QTableWidgetItem(QString::number(product["totalQuantity"].toInt())));
+        m_topProductsTable->setItem(i, 3, new QTableWidgetItem(QString("¥%1").arg(product["totalAmount"].toDouble(), 0, 'f', 2)));
     }
 }
 
-void ReportWidget::displaySalesReport(const QList<SalesOrderInfo> &orders, double total)
+void ReportWidget::onSalesOrdersLoaded(const QList<QVariantMap>& orders)
 {
-    ui->salesTable->setRowCount(0);
-    m_currentSalesReport = orders;
-
-    for (int i = 0; i < orders.size(); ++i) {
-        ui->salesTable->insertRow(i);
-        addSalesRowToTable(orders[i], i);
-    }
-
-    ui->salesTotalLabel->setText(QString("合计：¥ %1").arg(total, 0, 'f', 2));
-}
-
-void ReportWidget::displayProductSalesRanking(const QList<ProductSalesStat> &stats)
-{
-    ui->productSalesTable->setRowCount(0);
-    m_currentProductRanking = stats;
-
-    for (int i = 0; i < stats.size(); ++i) {
-        ui->productSalesTable->insertRow(i);
-        addProductSalesRowToTable(stats[i], i, i + 1);
+    m_ordersTable->setRowCount(orders.size());
+    for (int i = 0; i < orders.size(); i++) {
+        const QVariantMap& order = orders[i];
+        m_ordersTable->setItem(i, 0, new QTableWidgetItem(QString::number(order["id"].toInt())));
+        m_ordersTable->setItem(i, 1, new QTableWidgetItem(order["username"].toString()));
+        m_ordersTable->setItem(i, 2, new QTableWidgetItem(QString("¥%1").arg(order["totalAmount"].toDouble(), 0, 'f', 2)));
+        m_ordersTable->setItem(i, 3, new QTableWidgetItem(order["status"].toString()));
+        m_ordersTable->setItem(i, 4, new QTableWidgetItem(order["createdAt"].toString()));
+        m_ordersTable->setItem(i, 5, new QTableWidgetItem(order["remark"].toString()));
     }
 }
 
-void ReportWidget::displayDailySalesReport(const QList<QPair<QDate, double>> &report)
+void ReportWidget::onOperationError(const QString& error)
 {
-    ui->dailySalesTable->setRowCount(0);
-    m_currentDailyReport = report;
-
-    for (int i = 0; i < report.size(); ++i) {
-        ui->dailySalesTable->insertRow(i);
-        addDailySalesRowToTable(report[i], i);
-    }
-}
-
-void ReportWidget::addSalesRowToTable(const SalesOrderInfo &order, int row)
-{
-    ui->salesTable->setItem(row, 0, new QTableWidgetItem(QString::number(order.id)));
-    ui->salesTable->setItem(row, 1, new QTableWidgetItem(QString::number(order.userId)));
-    ui->salesTable->setItem(row, 2, new QTableWidgetItem(QString::number(order.totalAmount, 'f', 2)));
-    ui->salesTable->setItem(row, 3, new QTableWidgetItem(order.address));
-    ui->salesTable->setItem(row, 4, new QTableWidgetItem(order.remark));
-    ui->salesTable->setItem(row, 5, new QTableWidgetItem(order.createdAt.toString("yyyy-MM-dd hh:mm:ss")));
-}
-
-void ReportWidget::addProductSalesRowToTable(const ProductSalesStat &stat, int row, int rank)
-{
-    ui->productSalesTable->setItem(row, 0, new QTableWidgetItem(QString::number(rank)));
-    ui->productSalesTable->setItem(row, 1, new QTableWidgetItem(QString::number(stat.productId)));
-    ui->productSalesTable->setItem(row, 2, new QTableWidgetItem(stat.productName));
-    ui->productSalesTable->setItem(row, 3, new QTableWidgetItem(QString::number(stat.totalQuantity)));
-    ui->productSalesTable->setItem(row, 4, new QTableWidgetItem(QString::number(stat.totalAmount, 'f', 2)));
-}
-
-void ReportWidget::addDailySalesRowToTable(const QPair<QDate, double> &data, int row)
-{
-    ui->dailySalesTable->setItem(row, 0, new QTableWidgetItem(data.first.toString("yyyy-MM-dd")));
-    ui->dailySalesTable->setItem(row, 1, new QTableWidgetItem(QString::number(data.second, 'f', 2)));
-}
-
-void ReportWidget::updateStatisticsCards(const QDateTime &startDate, const QDateTime &endDate)
-{
-    double totalSales = DatabaseManager::instance().getTotalSales(startDate, endDate);
-    double totalProfit = DatabaseManager::instance().getTotalProfit(startDate, endDate);
-    int orderCount = DatabaseManager::instance().getOrderCount(startDate, endDate);
-
-    ui->totalSalesValue->setText(QString("¥ %1").arg(totalSales, 0, 'f', 2));
-    ui->totalProfitValue->setText(QString("¥ %1").arg(totalProfit, 0, 'f', 2));
-    ui->orderCountValue->setText(QString::number(orderCount));
-}
-
-void ReportWidget::updateStatus(const QString &message)
-{
-    ui->statusLabel->setText(message);
-}
-
-void ReportWidget::showError(const QString &message)
-{
-    QMessageBox::critical(this, "错误", message);
-    updateStatus("错误: " + message);
-}
-
-void ReportWidget::showSuccess(const QString &message)
-{
-    QMessageBox::information(this, "成功", message);
-    updateStatus(message);
+    QMessageBox::warning(this, "错误", error);
 }

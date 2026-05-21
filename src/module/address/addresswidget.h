@@ -2,49 +2,53 @@
 #define ADDRESSWIDGET_H
 
 #include <QWidget>
-#include <QTableWidgetItem>
-#include "common/databasemanager.h"
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class AddressWidget; }
-QT_END_NAMESPACE
+#include <QTableWidget>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QTextEdit>
 
 class AddressWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit AddressWidget(QWidget *parent = nullptr);
+    explicit AddressWidget(int userId, QWidget *parent = nullptr);
     ~AddressWidget();
 
-    void setCurrentUser(int userId);
+signals:
+    // 向后端请求数据的信号
+    void refreshRequested();                        // 请求刷新地址列表
+    void addAddressRequested(const QVariantMap& address);      // 添加地址
+    void updateAddressRequested(int id, const QVariantMap& address);  // 更新地址
+    void deleteAddressRequested(int id);            // 删除地址
+    void setDefaultAddressRequested(int id);        // 设为默认地址
 
-    void refreshAddressList();
-    bool addAddress(const BuyerAddressInfo &address);
-    bool updateAddress(const BuyerAddressInfo &address);
-    bool deleteAddress(int addressId);
-    bool setDefaultAddress(int addressId);
+public slots:
+    // 后端调用的槽（填充数据）
+    void onAddressLoaded(const QList<QVariantMap>& addresses);
+    void onOperationSuccess(const QString& message);
+    void onOperationError(const QString& error);
 
 private slots:
-    void onAddButtonClicked();
-    void onEditButtonClicked();
-    void onDeleteButtonClicked();
-    void onSetDefaultButtonClicked();
-    void onTableDoubleClicked(QTableWidgetItem *item);
+    void onAddClicked();
+    void onEditClicked();
+    void onDeleteClicked();
+    void onSetDefaultClicked();
+    void onRefreshClicked();
 
 private:
-    void setupTable();
-    void updateStatus(const QString &message);
-    void showError(const QString &message);
-    void showSuccess(const QString &message);
-    void displayAddresses(const QList<BuyerAddressInfo> &addresses);
-    void addAddressToTable(const BuyerAddressInfo &address, int row);
-    bool showAddressDialog(BuyerAddressInfo &address, bool isEdit = false);
+    void setupUI();
+    void showAddressDialog(int addressId = -1, const QVariantMap& data = QVariantMap());
 
-private:
-    Ui::AddressWidget *ui;
-    int m_currentUserId;
-    QList<BuyerAddressInfo> m_currentAddresses;
+    QTableWidget* m_tableWidget;
+    QPushButton* m_addBtn;
+    QPushButton* m_editBtn;
+    QPushButton* m_deleteBtn;
+    QPushButton* m_setDefaultBtn;
+    QPushButton* m_refreshBtn;
+
+    int m_userId;
 };
 
 #endif // ADDRESSWIDGET_H
