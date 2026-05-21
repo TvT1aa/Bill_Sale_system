@@ -30,8 +30,6 @@ set(PROJECT_SOURCES
         src/module/homewidget.ui
 
         # Common 模块
-        src/common/databasemanager.cpp
-        src/common/databasemanager.h
         src/common/destuil.cpp
         src/common/desutil.h
         src/common/hashsha.cpp
@@ -39,8 +37,8 @@ set(PROJECT_SOURCES
         src/common/user.cpp
         src/common/user.h
 
-
         # Login 模块
+
         src/module/login/login_controllor.cpp
         src/module/login/login_controllor.h
         src/module/login/loginwidget.cpp
