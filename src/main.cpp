@@ -4,7 +4,11 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
+    if (!DatabaseManager::instance().connectToDatabase()) {
+        qDebug() << "数据库连接失败：" << DatabaseManager::instance().getLastError();
+        return -1;
+    }
+    qDebug() << "数据库连接成功";
     // 管理员窗口
     HomeWidget* adminHome = new HomeWidget(1, "管理员", 1);
     adminHome->setWindowTitle("管理员模式");
