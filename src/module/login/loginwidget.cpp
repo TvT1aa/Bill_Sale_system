@@ -2,7 +2,10 @@
 #include "ui_loginwidget.h"
 #include "registerwidget.h"
 #include "mainwindow.h"
+#include "module/homewidget.h"
 #include <QMessageBox>
+#include <QGraphicsDropShadowEffect>
+#include <QApplication>
 
 LoginWidget::LoginWidget(QWidget *parent)
     : QWidget(parent)
@@ -10,11 +13,23 @@ LoginWidget::LoginWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // 设置用户名和密码输入框的文字颜色为黑色
+    setWindowFlags(Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground);
+
+    QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
+    shadow->setBlurRadius(20);
+    shadow->setColor(QColor(0, 0, 0, 50));
+    shadow->setOffset(0, 5);
+    ui->cardWidget->setGraphicsEffect(shadow);
+
     QPalette pal = ui->leUsername->palette();
     pal.setColor(QPalette::Text, Qt::black);
     ui->leUsername->setPalette(pal);
     ui->lePassword->setPalette(pal);
+
+    connect(ui->lePassword, &QLineEdit::returnPressed, this, &LoginWidget::on_btnLogin_clicked);
+    connect(ui->leUsername, &QLineEdit::returnPressed, this, &LoginWidget::on_btnLogin_clicked);
+    connect(ui->btn_close, &QPushButton::clicked, this, &LoginWidget::on_btn_close_clicked);
 }
 
 LoginWidget::~LoginWidget()
@@ -22,7 +37,30 @@ LoginWidget::~LoginWidget()
     delete ui;
 }
 
-// ========== 后端调用的槽实现 ==========
+void LoginWidget::on_btn_close_clicked()
+{
+    QApplication::quit();
+}
+
+void LoginWidget::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        QPoint pos = event->pos();
+        QWidget *child = childAt(pos);
+        if (child == ui->label_logo || pos.y() < 80) {
+            m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
+            event->accept();
+        }
+    }
+}
+
+void LoginWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    if (event->buttons() & Qt::LeftButton && !m_dragPosition.isNull()) {
+        move(event->globalPosition().toPoint() - m_dragPosition);
+        event->accept();
+    }
+}
 
 void LoginWidget::showLoginError(const QString &message)
 {
@@ -32,7 +70,17 @@ void LoginWidget::showLoginError(const QString &message)
 void LoginWidget::showLoginSuccess(const QString &message)
 {
     QMessageBox::information(this, "登录成功", message);
-    // TODO: 这里以后可以打开主程序界面
+}
+
+void LoginWidget::navigateToHome(int userId, const QString &username, int role)
+{
+    this->hide();
+    HomeWidget *homeWidget = new HomeWidget(userId, username, role);
+    homeWidget->setAttribute(Qt::WA_DeleteOnClose);
+    connect(homeWidget, &HomeWidget::destroyed, this, [this]() {
+        this->show();
+    });
+    homeWidget->show();
 }
 
 void LoginWidget::showRegisterError(const QString &message)
@@ -55,7 +103,6 @@ void LoginWidget::showResetSuccess(const QString &message)
     if (m_forgetWindow) m_forgetWindow->showResetSuccess(message);
 }
 
-// ========== 忘记密码 ==========
 void LoginWidget::on_btn_forgetPwd_clicked()
 {
     this->hide();
@@ -63,28 +110,24 @@ void LoginWidget::on_btn_forgetPwd_clicked()
     m_forgetWindow = new MainWindow(this);
     m_forgetWindow->setAttribute(Qt::WA_DeleteOnClose);
 
-    // 子窗口销毁时清空指针，并恢复登录界面
     connect(m_forgetWindow, &MainWindow::destroyed, this, [this]() {
         m_forgetWindow = nullptr;
         this->show();
     });
 
-    // 转发"提交重置"信号给后端
     connect(m_forgetWindow, &MainWindow::resetPasswordRequested,
             this, &LoginWidget::passwordResetSubmitted);
 
     m_forgetWindow->show();
 }
 
-// ========== 注册跳转 ==========
 void LoginWidget::on_btn_register_clicked()
 {
     this->hide();
 
-    m_regWindow = new RegisterWidget();
+    m_regWindow = new RegisterWidget(0);
     m_regWindow->setAttribute(Qt::WA_DeleteOnClose);
 
-    // 子窗口销毁时清空指针，并恢复登录界面
     connect(m_regWindow, &RegisterWidget::destroyed, this, [this]() {
         m_regWindow = nullptr;
         this->show();
@@ -94,14 +137,35 @@ void LoginWidget::on_btn_register_clicked()
         if (m_regWindow) m_regWindow->close();
     });
 
-    // 转发"注册提交"信号给后端
     connect(m_regWindow, &RegisterWidget::registerSubmitted,
             this, &LoginWidget::registerSubmitted);
 
     m_regWindow->show();
 }
 
-// ========== 登录按钮 ==========
+void LoginWidget::on_btn_registerAdmin_clicked()
+{
+    this->hide();
+
+    m_regWindow = new RegisterWidget(1);
+    m_regWindow->setAttribute(Qt::WA_DeleteOnClose);
+    m_regWindow->setWindowTitle("注册管理员");
+
+    connect(m_regWindow, &RegisterWidget::destroyed, this, [this]() {
+        m_regWindow = nullptr;
+        this->show();
+    });
+
+    connect(m_regWindow, &RegisterWidget::backToLogin, this, [this]() {
+        if (m_regWindow) m_regWindow->close();
+    });
+
+    connect(m_regWindow, &RegisterWidget::registerSubmitted,
+            this, &LoginWidget::registerSubmitted);
+
+    m_regWindow->show();
+}
+
 void LoginWidget::on_btnLogin_clicked()
 {
     QString username = ui->leUsername->text().trimmed();
@@ -112,6 +176,5 @@ void LoginWidget::on_btnLogin_clicked()
         return;
     }
 
-    // 发射信号，后端接手验证
     emit loginSubmitted(username, password);
 }

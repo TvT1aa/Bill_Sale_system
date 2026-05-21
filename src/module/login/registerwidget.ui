@@ -6,130 +6,314 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>310</width>
-    <height>347</height>
+    <width>500</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>注册</string>
   </property>
-  <widget class="QWidget" name="layoutWidget">
+  <property name="styleSheet">
+   <string notr="true">background-color: #667eea;</string>
+  </property>
+  <widget class="QWidget" name="centralWidget" native="true">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>30</y>
-     <width>271</width>
-     <height>271</height>
+     <x>0</x>
+     <y>0</y>
+     <width>500</width>
+     <height>620</height>
     </rect>
    </property>
-   <layout class="QGridLayout" name="gridLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <property name="leftMargin">
-     <number>20</number>
+     <number>50</number>
     </property>
     <property name="topMargin">
-     <number>20</number>
+     <number>40</number>
     </property>
     <property name="rightMargin">
-     <number>20</number>
+     <number>50</number>
     </property>
     <property name="bottomMargin">
-     <number>20</number>
+     <number>40</number>
     </property>
-    <property name="spacing">
-     <number>18</number>
-    </property>
-    <item row="5" column="0">
-     <widget class="QPushButton" name="btn_BackToLogin">
-      <property name="text">
-       <string>返回登录</string>
+    <item>
+     <widget class="QWidget" name="cardWidget" native="true">
+      <property name="styleSheet">
+       <string notr="true">background-color: white;
+border-radius: 16px;</string>
       </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QLineEdit" name="le_Register_Email"/>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_2">
-      <property name="font">
-       <font>
-        <pointsize>11</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>密码：</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLineEdit" name="le_Register_Username"/>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLineEdit" name="le_Register_Password"/>
-    </item>
-    <item row="2" column="1">
-     <widget class="QLineEdit" name="le_Register_ConfirmPwd"/>
-    </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_3">
-      <property name="font">
-       <font>
-        <pointsize>11</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>确认密码：</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="font">
-       <font>
-        <pointsize>11</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>用户名：</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="1">
-     <widget class="QPushButton" name="btn_RegisterSubmit">
-      <property name="text">
-       <string>注册</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="1">
-     <widget class="QLineEdit" name="le_Register_Phone"/>
-    </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="label_4">
-      <property name="font">
-       <font>
-        <pointsize>11</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>邮箱输入：</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0">
-     <widget class="QLabel" name="label_5">
-      <property name="font">
-       <font>
-        <pointsize>11</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>手机号输入：</string>
-      </property>
+      <layout class="QVBoxLayout" name="cardLayout">
+       <property name="leftMargin">
+        <number>30</number>
+       </property>
+       <property name="topMargin">
+        <number>30</number>
+       </property>
+       <property name="rightMargin">
+        <number>30</number>
+       </property>
+       <property name="bottomMargin">
+        <number>30</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="titleBarLayout">
+         <item>
+          <widget class="QLabel" name="label_title">
+           <property name="text">
+            <string>📝 用户注册</string>
+           </property>
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei</family>
+             <pointsize>20</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: #667eea;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="titleSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_close">
+           <property name="text">
+            <string>✕</string>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
+           <property name="fixedSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton {
+    background-color: transparent;
+    color: #909399;
+    border: none;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #f56c6c;
+    color: white;
+}</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_Register_Username">
+         <property name="placeholderText">
+          <string>用户名（3-20个字符）</string>
+         </property>
+         <property name="minimumHeight">
+          <number>44</number>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: white;
+}
+QLineEdit:focus {
+    border: 1px solid #667eea;
+}</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_Register_Email">
+         <property name="placeholderText">
+          <string>电子邮箱</string>
+         </property>
+         <property name="minimumHeight">
+          <number>44</number>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: white;
+}
+QLineEdit:focus {
+    border: 1px solid #667eea;
+}</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_Register_Phone">
+         <property name="placeholderText">
+          <string>手机号码（选填）</string>
+         </property>
+         <property name="minimumHeight">
+          <number>44</number>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: white;
+}
+QLineEdit:focus {
+    border: 1px solid #667eea;
+}</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_Register_Password">
+         <property name="placeholderText">
+          <string>密码（6-20个字符）</string>
+         </property>
+         <property name="minimumHeight">
+          <number>44</number>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: white;
+}
+QLineEdit:focus {
+    border: 1px solid #667eea;
+}</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_Register_ConfirmPwd">
+         <property name="placeholderText">
+          <string>确认密码</string>
+         </property>
+         <property name="minimumHeight">
+          <number>44</number>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: white;
+}
+QLineEdit:focus {
+    border: 1px solid #667eea;
+}</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_passwordTip">
+         <property name="text">
+          <string>💡 密码建议包含大小写字母、数字和特殊字符</string>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color: #909399;
+margin-top: 5px;
+margin-bottom: 10px;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_RegisterSubmit">
+         <property name="minimumHeight">
+          <number>44</number>
+         </property>
+         <property name="text">
+          <string>立即注册</string>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+    background-color: #67c23a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #5daf34;
+}
+QPushButton:pressed {
+    background-color: #529b2e;
+}</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_BackToLogin">
+         <property name="text">
+          <string>← 返回登录</string>
+         </property>
+         <property name="minimumHeight">
+          <number>40</number>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+    color: #909399;
+    font-size: 13px;
+    border: none;
+}
+QPushButton:hover {
+    color: #667eea;
+}</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>
