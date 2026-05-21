@@ -69,17 +69,18 @@ UserInfo DatabaseManager::getUserById(int userId)
 // 4. 写入操作
 bool DatabaseManager::registerUser(const QString& username, const QString& email,
                                    const QString& phone, const QString& passwordHash,
-                                   int* outUserId)
+                                   int role, int* outUserId)
 {
     if (!isConnected()) return false;
 
     m_db.transaction();
     QSqlQuery query(m_db);
-    query.prepare("INSERT INTO users (username, email, phone, password_hash) VALUES (?, ?, ?, ?)");
-    query.addBindValue(username); // 这里的参数已经在 Controller 里加密过了
+    query.prepare("INSERT INTO users (username, email, phone, password_hash, role) VALUES (?, ?, ?, ?, ?)");
+    query.addBindValue(username);
     query.addBindValue(email);
     query.addBindValue(phone);
     query.addBindValue(passwordHash);
+    query.addBindValue(role);
     if (!query.exec()) {
         m_db.rollback();
         return false;
@@ -203,7 +204,19 @@ bool DatabaseManager::updateUserInfo(int userId, const QString& email, const QSt
     return m_db.commit();
 }
 
-// 9. SHA256哈希
+// 9. 更新最后登录时间
+bool DatabaseManager::updateLastLogin(int userId)
+{
+    if (!isConnected()) return false;
+
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?");
+    query.addBindValue(userId);
+
+    return query.exec();
+}
+
+// 10. SHA256哈希
 QString DatabaseManager::hashSha256(const QString& input)
 {
     QByteArray hash = QCryptographicHash::hash(input.toUtf8(), QCryptographicHash::Sha256);

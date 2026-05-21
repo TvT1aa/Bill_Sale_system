@@ -69,6 +69,39 @@ struct PurchaseOrderItemInfo {
     double subtotal = 0.0;
 };
 
+struct SalesOrderInfo {
+    int id = -1;
+    int userId = -1;
+    QString address;
+    double totalAmount = 0.0;
+    QString remark;
+    QString createdAt;
+};
+
+struct SalesOrderItemInfo {
+    int id = -1;
+    int orderId = -1;
+    int productId = -1;
+    int quantity = 0;
+    double unitPrice = 0.0;
+    double subtotal = 0.0;
+};
+
+struct AccountInfo {
+    int id = -1;
+    QString name;
+    double balance = 0.0;
+    QString updatedAt;
+};
+
+struct TransactionInfo {
+    int id = -1;
+    int type = 0;          // 0=支出，1=收入
+    double amount = 0.0;
+    QString remark;
+    QString createdAt;
+};
+
 class DatabaseManager
 {
 public:
@@ -90,7 +123,7 @@ public:
     // 用户注册
     bool registerUser(const QString& username, const QString& email,
                       const QString& phone, const QString& passwordHash,
-                      int* outUserId = nullptr);
+                      int role = 0, int* outUserId = nullptr);
 
     // 密码更新
     bool updatePassword(int userId, const QString& newPasswordHash);
@@ -99,6 +132,8 @@ public:
     bool updateUserInfo(int userId, const QString& email, const QString& phone);
     // 精确删除用户
     bool deleteUserByAccount(const QString& account);
+    // 更新最后登录时间
+    bool updateLastLogin(int userId);
     // 商品查找
     ProductInfo getProductById(int productId);
     QList<ProductInfo> getProductsByName(const QString& name);
@@ -155,6 +190,38 @@ public:
     bool updateOrderItem(int itemId, int quantity, double unitPrice);
     // 删除采购订单明细
     bool deleteOrderItem(int itemId);
+
+    // 销售订单查找
+    SalesOrderInfo getSalesOrderById(int orderId);
+    QList<SalesOrderInfo> getSalesOrdersByUserId(int userId);
+    QList<SalesOrderInfo> getAllSalesOrders();
+    // 添加销售订单
+    bool addSalesOrder(int userId, const QString& address, const QString& remark, int* outOrderId = nullptr);
+    // 删除销售订单
+    bool deleteSalesOrder(int orderId);
+
+    // 销售订单明细查找
+    QList<SalesOrderItemInfo> getSalesOrderItems(int orderId);
+    // 添加销售订单明细
+    bool addSalesOrderItem(int orderId, int productId, int quantity, double unitPrice, int* outItemId = nullptr);
+    // 修改销售订单明细
+    bool updateSalesOrderItem(int itemId, int quantity, double unitPrice);
+    // 删除销售订单明细
+    bool deleteSalesOrderItem(int itemId);
+
+    // 账户查找
+    AccountInfo getAccount();
+    // 更新余额
+    bool updateBalance(double balance);
+    // 添加收入
+    bool addIncome(double amount, const QString& remark);
+    // 添加支出
+    bool addExpense(double amount, const QString& remark);
+
+    // 收支流水查找
+    TransactionInfo getTransactionById(int transactionId);
+    QList<TransactionInfo> getAllTransactions();
+    QList<TransactionInfo> getTransactionsByType(int type);
 
     // 工具
     static QString hashSha256(const QString& input);
