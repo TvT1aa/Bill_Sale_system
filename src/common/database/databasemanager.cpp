@@ -1,10 +1,6 @@
-
-
 #include "databasemanager.h"
-#include "desutil.h"
 #include <QCoreApplication>
 #include <QSqlError>
-#include <QSqlRecord>
 #include <QSqlQuery>
 #include <QDebug>
 #include <QFile>
@@ -104,71 +100,4 @@ bool DatabaseManager::execute(const QString& sql, const QList<QVariant>& args)
         return false;
     }
     return true;
-}
-
-// 6. 查重逻辑：注册前调用
-bool DatabaseManager::userExists(const QString& username)
-{
-    QSqlQuery query(m_db);
-    // 数据库存的是密文，所以查重也要用密文去查
-    query.prepare("SELECT 1 FROM users WHERE username = ?");
-    query.addBindValue(username);
-    return query.exec() && query.next();
-}
-
-// 7. 核心查询：findUserByAccount
-UserInfo DatabaseManager::findUserByAccount(const QString& account)
-{
-    UserInfo info;
-    // 步骤 A: 把用户输入的明文变成密文，才能去数据库里匹配
-    QString encryptedSearch = DESutil::encryptWithDefaultKey(account.trimmed());
-
-    QSqlQuery query(m_db);
-    query.prepare("SELECT id, username, email, phone, password_hash, is_active "
-                  "FROM users WHERE username = ? OR email = ? OR phone = ?");
-    query.addBindValue(encryptedSearch);
-    query.addBindValue(encryptedSearch);
-    query.addBindValue(encryptedSearch);
-
-    if (query.exec() && query.next()) {
-        info.id = query.value("id").toInt();
-
-        // 步骤 B: 数据库取出的是密文，这里使用解密还原成明文给 UI 使用
-        // 这就是你刚才纠结的那行逻辑，应该放在“取出数据”之后
-        info.username = DESutil::decryptWithDefaultKey(query.value("username").toString());
-        info.email = DESutil::decryptWithDefaultKey(query.value("email").toString());
-
-        info.passwordHash = query.value("password_hash").toString(); // Hash不需要解密
-        info.isActive = query.value("is_active").toInt();
-
-        qDebug() << "成功查获并解密用户:" << info.username;
-    }
-    return info;
-}
-
-// 8. 写入操作
-bool DatabaseManager::registerUser(const QString& username, const QString& email,
-                                   const QString& phone, const QString& passwordHash,
-                                   int* outUserId)
-{
-    if (!isConnected()) return false;
-
-    m_db.transaction();
-    QSqlQuery query(m_db);
-    query.prepare("INSERT INTO users (username, email, phone, password_hash) VALUES (?, ?, ?, ?)");
-    query.addBindValue(username); // 这里的参数已经在 Controller 里加密过了
-    query.addBindValue(email);
-    query.addBindValue(phone);
-    query.addBindValue(passwordHash);
-
-    if (!query.exec()) {
-        m_db.rollback();
-        return false;
-    }
-
-    if (m_db.commit()) {
-        if (outUserId) *outUserId = query.lastInsertId().toInt();
-        return true;
-    }
-    return false;
 }

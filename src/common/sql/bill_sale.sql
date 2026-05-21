@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS products (
     sale_price DECIMAL(10,2) DEFAULT 0,     -- 销售单价
     unit VARCHAR(20),                       -- 计量单位（个、箱、斤等）
     remark VARCHAR(255),                    -- 备注
+    is_active INTEGER DEFAULT 1,            -- 是否启用（1=启用，0=禁用）
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP   -- 更新时间
 );
