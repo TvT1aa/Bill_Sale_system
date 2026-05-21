@@ -1,5 +1,8 @@
 #include <QApplication>
-#include "module/homewidget.h"
+#include <QDebug>
+#include "common/databasemanager.h"
+#include "module/login/loginwidget.h"
+#include "module/login/login_controllor.h"
 
 int main(int argc, char *argv[])
 {
@@ -9,6 +12,7 @@ int main(int argc, char *argv[])
         return -1;
     }
     qDebug() << "数据库连接成功";
+  
     // 管理员窗口
     HomeWidget* adminHome = new HomeWidget(1, "管理员", 1);
     adminHome->setWindowTitle("管理员模式");
@@ -21,5 +25,9 @@ int main(int argc, char *argv[])
     userHome->move(850, 50);
     userHome->show();
 
+    LoginWidget loginWidget;
+    login_controllor controller;
+    controller.setView(&loginWidget);
+    loginWidget.show();
     return a.exec();
 }
