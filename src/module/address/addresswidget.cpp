@@ -1,5 +1,6 @@
 #include "addresswidget.h"
 #include "ui_addresswidget.h"
+#include "common/databasemanager.h"
 #include <QMessageBox>
 #include <QDialog>
 #include <QVBoxLayout>
@@ -13,19 +14,25 @@
 AddressWidget::AddressWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::AddressWidget)
+    , m_currentUserId(0)
 {
     ui->setupUi(this);
     setupTable();
 
     connect(ui->addButton, &QPushButton::clicked, this, &AddressWidget::onAddButtonClicked);
 
-    refreshAddressList();
     updateStatus("就绪");
 }
 
 AddressWidget::~AddressWidget()
 {
     delete ui;
+}
+
+void AddressWidget::setCurrentUser(int userId)
+{
+    m_currentUserId = userId;
+    refreshAddressList();
 }
 
 void AddressWidget::setupTable()
@@ -47,69 +54,57 @@ void AddressWidget::setupTable()
 
 void AddressWidget::refreshAddressList()
 {
-    QList<AddressInfo> addresses;
-
-    AddressInfo a1;
-    a1.id = 1;
-    a1.name = "张三";
-    a1.phone = "13800138001";
-    a1.province = "广东省";
-    a1.city = "深圳市";
-    a1.district = "南山区";
-    a1.detail = "科技园路100号";
-    a1.isDefault = true;
-    addresses.append(a1);
-
-    AddressInfo a2;
-    a2.id = 2;
-    a2.name = "李四";
-    a2.phone = "13800138002";
-    a2.province = "广东省";
-    a2.city = "广州市";
-    a2.district = "天河区";
-    a2.detail = "体育西路200号";
-    a2.isDefault = false;
-    addresses.append(a2);
-
+    QList<BuyerAddressInfo> addresses = DatabaseManager::instance().getAddressesByUserId(m_currentUserId);
     displayAddresses(addresses);
     updateStatus(QString("加载了 %1 个地址").arg(addresses.size()));
 }
 
-bool AddressWidget::addAddress(const AddressInfo &address)
+bool AddressWidget::addAddress(const BuyerAddressInfo &address)
 {
-    Q_UNUSED(address);
-    refreshAddressList();
-    return true;
+    if (DatabaseManager::instance().addAddress(address)) {
+        refreshAddressList();
+        return true;
+    }
+    return false;
 }
 
-bool AddressWidget::updateAddress(int id, const AddressInfo &address)
+bool AddressWidget::updateAddress(const BuyerAddressInfo &address)
 {
-    Q_UNUSED(id);
-    Q_UNUSED(address);
-    refreshAddressList();
-    return true;
+    if (DatabaseManager::instance().updateAddress(address)) {
+        refreshAddressList();
+        return true;
+    }
+    return false;
 }
 
-bool AddressWidget::deleteAddress(int id)
+bool AddressWidget::deleteAddress(int addressId)
 {
-    Q_UNUSED(id);
-    refreshAddressList();
-    return true;
+    if (DatabaseManager::instance().deleteAddress(addressId)) {
+        refreshAddressList();
+        return true;
+    }
+    return false;
 }
 
-bool AddressWidget::setDefaultAddress(int id)
+bool AddressWidget::setDefaultAddress(int addressId)
 {
-    Q_UNUSED(id);
-    refreshAddressList();
-    return true;
+    if (DatabaseManager::instance().setDefaultAddress(m_currentUserId, addressId)) {
+        refreshAddressList();
+        return true;
+    }
+    return false;
 }
 
 void AddressWidget::onAddButtonClicked()
 {
-    AddressInfo newAddress;
+    BuyerAddressInfo newAddress;
+    newAddress.userId = m_currentUserId;
     if (showAddressDialog(newAddress, false)) {
-        addAddress(newAddress);
-        showSuccess("地址添加成功");
+        if (addAddress(newAddress)) {
+            showSuccess("地址添加成功");
+        } else {
+            showError("地址添加失败");
+        }
     }
 }
 
@@ -121,10 +116,13 @@ void AddressWidget::onEditButtonClicked()
         return;
     }
 
-    AddressInfo address = m_currentAddresses[row];
+    BuyerAddressInfo address = m_currentAddresses[row];
     if (showAddressDialog(address, true)) {
-        updateAddress(address.id, address);
-        showSuccess("地址更新成功");
+        if (updateAddress(address)) {
+            showSuccess("地址更新成功");
+        } else {
+            showError("地址更新失败");
+        }
     }
 }
 
@@ -143,8 +141,11 @@ void AddressWidget::onDeleteButtonClicked()
 
     if (reply == QMessageBox::Yes) {
         int id = ui->addressTable->item(row, 0)->text().toInt();
-        deleteAddress(id);
-        showSuccess("地址删除成功");
+        if (deleteAddress(id)) {
+            showSuccess("地址删除成功");
+        } else {
+            showError("地址删除失败");
+        }
     }
 }
 
@@ -157,18 +158,20 @@ void AddressWidget::onSetDefaultButtonClicked()
     }
 
     int id = ui->addressTable->item(row, 0)->text().toInt();
-    setDefaultAddress(id);
-    showSuccess("已设为默认地址");
+    if (setDefaultAddress(id)) {
+        showSuccess("已设为默认地址");
+    } else {
+        showError("设置默认地址失败");
+    }
 }
 
 void AddressWidget::onTableDoubleClicked(QTableWidgetItem *item)
 {
-    if (item) {
-        onEditButtonClicked();
-    }
+    Q_UNUSED(item);
+    onEditButtonClicked();
 }
 
-void AddressWidget::displayAddresses(const QList<AddressInfo> &addresses)
+void AddressWidget::displayAddresses(const QList<BuyerAddressInfo> &addresses)
 {
     ui->addressTable->setRowCount(0);
     m_currentAddresses = addresses;
@@ -200,7 +203,7 @@ void AddressWidget::displayAddresses(const QList<AddressInfo> &addresses)
     }
 }
 
-void AddressWidget::addAddressToTable(const AddressInfo &address, int row)
+void AddressWidget::addAddressToTable(const BuyerAddressInfo &address, int row)
 {
     QString fullAddress = QString("%1 %2 %3 %4").arg(address.province, address.city, address.district, address.detail);
     ui->addressTable->setItem(row, 0, new QTableWidgetItem(QString::number(address.id)));
@@ -210,7 +213,7 @@ void AddressWidget::addAddressToTable(const AddressInfo &address, int row)
     ui->addressTable->setItem(row, 4, new QTableWidgetItem(address.isDefault ? "是" : ""));
 }
 
-bool AddressWidget::showAddressDialog(AddressInfo &address, bool isEdit)
+bool AddressWidget::showAddressDialog(BuyerAddressInfo &address, bool isEdit)
 {
     QDialog dialog(this);
     dialog.setWindowTitle(isEdit ? "编辑地址" : "新增地址");
@@ -227,7 +230,7 @@ bool AddressWidget::showAddressDialog(AddressInfo &address, bool isEdit)
     QLineEdit *detailEdit = new QLineEdit(address.detail);
     QCheckBox *defaultCheck = new QCheckBox("设为默认地址");
 
-    provinceCombo->addItems({"广东省", "北京市", "上海市"});
+    provinceCombo->addItems({"广东省", "北京市", "上海市", "浙江省", "江苏省"});
     cityCombo->addItems({"深圳市", "广州市"});
     districtCombo->addItems({"南山区", "福田区", "罗湖区"});
 
@@ -264,6 +267,7 @@ bool AddressWidget::showAddressDialog(AddressInfo &address, bool isEdit)
         address.district = districtCombo->currentText();
         address.detail = detailEdit->text();
         address.isDefault = defaultCheck->isChecked();
+        address.userId = m_currentUserId;
         return true;
     }
     return false;

@@ -3,51 +3,11 @@
 
 #include <QWidget>
 #include <QTableWidgetItem>
+#include "common/databasemanager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class InventoryWidget; }
 QT_END_NAMESPACE
-
-// 商品数据结构
-struct ProductInfo {
-    int id;
-    QString name;
-    int quantity;
-    int warningLevel;
-    double purchasePrice;
-    double salePrice;
-    QString lastUpdate;
-};
-
-// 销售记录结构体
-struct SalesRecord {
-    int id;
-    QString productName;
-    int quantity;
-    double price;
-    double total;
-    QString customer;
-    QString saleTime;
-};
-
-// 进货记录结构体
-struct PurchaseRecord {
-    int id;
-    QString productName;
-    int quantity;
-    double price;
-    double total;
-    QString supplier;
-    QString purchaseTime;
-};
-
-// 商品销售统计
-struct ProductSalesStat {
-    int productId;
-    QString productName;
-    int totalQuantity;
-    double totalAmount;
-};
 
 class InventoryWidget : public QWidget
 {
@@ -57,6 +17,8 @@ public:
     explicit InventoryWidget(QWidget *parent = nullptr);
     ~InventoryWidget();
 
+    void setCurrentUser(int userId, const QString &username);
+
     // ========== 商品管理接口 ==========
     void refreshInventoryData();
     bool addProduct(const ProductInfo &product);
@@ -65,22 +27,20 @@ public:
     bool updateStock(int productId, int newQuantity);
     void searchProductByName(const QString &name);
     int getCurrentSelectedProductId() const;
-    QList<ProductInfo> getAllProducts() const;
+    QList<ProductInfo> getAllProducts() const;  // ← 添加这行
 
     // ========== 统计接口 ==========
-    double getMonthlyIncome(int year, int month);      // 月收入 = 销售额 - 进货额
-    double getMonthlySales(int year, int month);       // 月销售额
-    double getMonthlyPurchase(int year, int month);    // 月进货额
-    double getMonthlyProfit(int year, int month);      // 月利润
-    void refreshStatistics(int year, int month);       // 刷新所有统计
+    double getMonthlyIncome(int year, int month);
+    double getMonthlySales(int year, int month);
+    double getMonthlyPurchase(int year, int month);
+    double getMonthlyProfit(int year, int month);
+    void refreshStatistics(int year, int month);
 
     // ========== 明细查询接口 ==========
-    QList<SalesRecord> getMonthlySalesDetails(int year, int month);
-    QList<PurchaseRecord> getMonthlyPurchaseDetails(int year, int month);
+    QList<SalesOrderInfo> getMonthlySalesDetails(int year, int month);
     QList<ProductSalesStat> getProductSalesRanking(int year, int month, int limit = 10);
 
 private slots:
-    // ========== UI 槽函数 ==========
     void onSearchButtonClicked();
     void onRefreshButtonClicked();
     void onAddButtonClicked();
@@ -91,37 +51,34 @@ private slots:
     void onQueryStatsButtonClicked();
 
 private:
-    // ========== 内部辅助函数 ==========
     void setupTable();
     void setupDetailTables();
     void updateStatus(const QString &message);
     void showError(const QString &message);
     void showSuccess(const QString &message);
+    void updateTotalDisplay();  // ← 添加这行（如果不需要可以删除实现）
 
-    // 表格操作
     void displayProducts(const QList<ProductInfo> &products);
     void addRowToTable(const ProductInfo &product, int row);
     ProductInfo getProductFromCurrentRow() const;
     void clearTable();
 
-    // 明细表格显示
-    void displaySalesDetails(const QList<SalesRecord> &records);
-    void displayPurchaseDetails(const QList<PurchaseRecord> &records);
+    void displaySalesDetails(const QList<SalesOrderInfo> &orders);
     void displayProductSalesRanking(const QList<ProductSalesStat> &stats);
+    void addSalesRowToTable(const SalesOrderInfo &order, int row);
+    void addProductSalesRowToTable(const ProductSalesStat &stat, int row, int rank);
 
-    // 对话框
     bool showAddProductDialog(ProductInfo &product);
     bool showEditProductDialog(ProductInfo &product);
     bool showStockAdjustDialog(int productId, int currentQuantity, int &newQuantity);
-
-    // 获取当前选中的年月
     void getCurrentYearMonth(int &year, int &month);
 
 private:
     Ui::InventoryWidget *ui;
+    int m_currentUserId;
+    QString m_currentUsername;
     QList<ProductInfo> m_currentProducts;
-    QList<SalesRecord> m_currentSalesDetails;
-    QList<PurchaseRecord> m_currentPurchaseDetails;
+    QList<SalesOrderInfo> m_currentSalesDetails;
     QList<ProductSalesStat> m_currentProductSalesRank;
 };
 

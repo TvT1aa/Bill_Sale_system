@@ -3,21 +3,11 @@
 
 #include <QWidget>
 #include <QTableWidgetItem>
+#include "common/databasemanager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class AddressWidget; }
 QT_END_NAMESPACE
-
-struct AddressInfo {
-    int id;
-    QString name;
-    QString phone;
-    QString province;
-    QString city;
-    QString district;
-    QString detail;
-    bool isDefault;
-};
 
 class AddressWidget : public QWidget
 {
@@ -27,11 +17,13 @@ public:
     explicit AddressWidget(QWidget *parent = nullptr);
     ~AddressWidget();
 
+    void setCurrentUser(int userId);
+
     void refreshAddressList();
-    bool addAddress(const AddressInfo &address);
-    bool updateAddress(int id, const AddressInfo &address);
-    bool deleteAddress(int id);
-    bool setDefaultAddress(int id);
+    bool addAddress(const BuyerAddressInfo &address);
+    bool updateAddress(const BuyerAddressInfo &address);
+    bool deleteAddress(int addressId);
+    bool setDefaultAddress(int addressId);
 
 private slots:
     void onAddButtonClicked();
@@ -45,13 +37,14 @@ private:
     void updateStatus(const QString &message);
     void showError(const QString &message);
     void showSuccess(const QString &message);
-    void displayAddresses(const QList<AddressInfo> &addresses);
-    void addAddressToTable(const AddressInfo &address, int row);
-    bool showAddressDialog(AddressInfo &address, bool isEdit = false);
+    void displayAddresses(const QList<BuyerAddressInfo> &addresses);
+    void addAddressToTable(const BuyerAddressInfo &address, int row);
+    bool showAddressDialog(BuyerAddressInfo &address, bool isEdit = false);
 
 private:
     Ui::AddressWidget *ui;
-    QList<AddressInfo> m_currentAddresses;
+    int m_currentUserId;
+    QList<BuyerAddressInfo> m_currentAddresses;
 };
 
 #endif // ADDRESSWIDGET_H
