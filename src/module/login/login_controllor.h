@@ -4,7 +4,7 @@
 
 #include <QObject>
 #include "user.h"            // 必须连接：提供校验逻辑和哈希算法
-#include "databasemanager.h" // 必须连接：提供数据库读写
+#include "database/databasemanager.h" // 必须连接：提供数据库读写
 #include "loginwidget.h"     // 必须连接：获取 UI 信号
 #include "desutil.h"
 #include "hashsha.h"

@@ -22,17 +22,22 @@ set(PROJECT_SOURCES
         src/mainwindow.cpp
         src/mainwindow.h
         src/mainwindow.ui
-
+        #database 模块
+        src/common/database/databasemanager.cpp
+        src/common/database/database_user.cpp
+        src/common/database/databasemanager.h
+        src/common/database/database_products.cpp
+        src/common/database/database_addresses.cpp
+        src/common/database/database_inventory.cpp
         # Common 模块
-        src/common/databasemanager.cpp
-        src/common/databasemanager.h
         src/common/destuil.cpp
         src/common/desutil.h
         src/common/hashsha.cpp
         src/common/hashsha.h
         src/common/user.cpp
         src/common/user.h
-
+        src/common/passwordmanager.h
+        src/common/passwordmanager.cpp
         # Login 模块 (View & Controller)
         src/module/login/login_controllor.cpp
         src/module/login/login_controllor.h
@@ -84,7 +89,8 @@ set(PROJECT_SOURCES
         src/module/report/reportwidget.cpp
         src/module/report/reportwidget.h
         src/module/report/reportwidget.ui
-        )
+        src/common/passwordmanager.cpp
+)
 
 qt_add_executable(BillandSale_system
         MANUAL_FINALIZATION
