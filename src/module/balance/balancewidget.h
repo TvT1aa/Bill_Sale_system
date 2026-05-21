@@ -3,19 +3,11 @@
 
 #include <QWidget>
 #include <QTableWidgetItem>
+#include "common/databasemanager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class BalanceWidget; }
 QT_END_NAMESPACE
-
-struct TransactionRecord {
-    int id;
-    QString type;
-    double amount;
-    double balance;
-    QString remark;
-    QString createTime;
-};
 
 class BalanceWidget : public QWidget
 {
@@ -24,6 +16,8 @@ class BalanceWidget : public QWidget
 public:
     explicit BalanceWidget(QWidget *parent = nullptr);
     ~BalanceWidget();
+
+    void setCurrentUser(int userId, const QString &username);
 
     void refreshBalance();
     void refreshTransactionHistory();
@@ -41,12 +35,14 @@ private:
     void updateStatus(const QString &message);
     void showError(const QString &message);
     void showSuccess(const QString &message);
-    void displayTransactions(const QList<TransactionRecord> &records);
-    void addTransactionToTable(const TransactionRecord &record, int row);
+    void displayTransactions(const QList<TransactionInfo> &records);
+    void addTransactionToTable(const TransactionInfo &record, int row);
 
 private:
     Ui::BalanceWidget *ui;
-    QList<TransactionRecord> m_currentTransactions;
+    int m_currentUserId;
+    QString m_currentUsername;
+    QList<TransactionInfo> m_currentTransactions;
 };
 
 #endif // BALANCEWIDGET_H

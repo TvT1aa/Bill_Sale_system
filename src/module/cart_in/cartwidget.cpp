@@ -1,5 +1,6 @@
 #include "cartwidget.h"
 #include "ui_cartwidget.h"
+#include "common/databasemanager.h"
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QDateTime>
@@ -27,7 +28,6 @@ CartWidget::CartWidget(QWidget *parent)
     connect(ui->cartTable, &QTableWidget::itemDoubleClicked,
             this, &CartWidget::onCartTableDoubleClicked);
 
-    setCurrentUser(1, "测试用户", 1000.00);
     updateStatus("就绪");
 }
 
@@ -36,8 +36,26 @@ CartWidget::~CartWidget()
     delete ui;
 }
 
+void CartWidget::setCurrentUser(int userId, const QString &username)
+{
+    m_currentUserId = userId;
+    m_currentUsername = username;
+    refreshBalance();
+    refreshProductList();
+    refreshCart();
+    refreshOrders();
+}
+
+void CartWidget::refreshBalance()
+{
+    AccountInfo account = DatabaseManager::instance().getAccountByUserId(m_currentUserId);
+    m_currentBalance = account.balance;
+    ui->balanceLabel->setText(QString("余额：¥ %1").arg(m_currentBalance, 0, 'f', 2));
+}
+
 void CartWidget::setupTables()
 {
+    // 购物车表格
     QStringList cartHeaders = {"商品ID", "商品名称", "数量", "单价", "小计", "操作"};
     ui->cartTable->setColumnCount(cartHeaders.size());
     ui->cartTable->setHorizontalHeaderLabels(cartHeaders);
@@ -48,13 +66,15 @@ void CartWidget::setupTables()
     ui->cartTable->setColumnWidth(4, 100);
     ui->cartTable->setColumnWidth(5, 100);
 
-    QStringList orderHeaders = {"订单号", "总金额", "状态", "下单时间"};
+    // 订单表格
+    QStringList orderHeaders = {"订单号", "总金额", "地址", "备注", "下单时间"};
     ui->ordersTable->setColumnCount(orderHeaders.size());
     ui->ordersTable->setHorizontalHeaderLabels(orderHeaders);
-    ui->ordersTable->setColumnWidth(0, 150);
+    ui->ordersTable->setColumnWidth(0, 100);
     ui->ordersTable->setColumnWidth(1, 100);
-    ui->ordersTable->setColumnWidth(2, 100);
+    ui->ordersTable->setColumnWidth(2, 200);
     ui->ordersTable->setColumnWidth(3, 150);
+    ui->ordersTable->setColumnWidth(4, 150);
 
     ui->cartTable->setAlternatingRowColors(true);
     ui->cartTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -65,25 +85,16 @@ void CartWidget::setupTables()
     ui->ordersTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
 }
 
-void CartWidget::setCurrentUser(int userId, const QString &username, double balance)
-{
-    m_currentUserId = userId;
-    m_currentUsername = username;
-    m_currentBalance = balance;
-    ui->usernameLabel->setText(username);
-    refreshBalance();
-    refreshProductList();
-    refreshCart();
-    refreshOrders();
-}
-
 void CartWidget::refreshProductList()
 {
     ui->productCombo->clear();
     ui->productCombo->addItem("请选择商品", -1);
-    ui->productCombo->addItem("笔记本电脑", 1001);
-    ui->productCombo->addItem("无线鼠标", 1002);
-    ui->productCombo->addItem("机械键盘", 1003);
+
+    QList<ProductInfo> products = DatabaseManager::instance().getAllProducts();
+    for (const ProductInfo &product : products) {
+        ui->productCombo->addItem(product.name, product.id);
+    }
+    updateStatus(QString("加载了 %1 个商品").arg(products.size()));
 }
 
 void CartWidget::refreshCart()
@@ -94,30 +105,10 @@ void CartWidget::refreshCart()
 
 void CartWidget::refreshOrders()
 {
-    QList<Order> orders;
-    Order order1;
-    order1.id = 1;
-    order1.orderNo = "202405190001";
-    order1.totalAmount = 5038.00;
-    order1.status = "已支付";
-    order1.createTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
-    orders.append(order1);
-
-    Order order2;
-    order2.id = 2;
-    order2.orderNo = "202405180002";
-    order2.totalAmount = 39.00;
-    order2.status = "已支付";
-    order2.createTime = QDateTime::currentDateTime().addDays(-1).toString("yyyy-MM-dd hh:mm:ss");
-    orders.append(order2);
-
+    QList<SalesOrderInfo> orders = DatabaseManager::instance().getOrdersByUserId(m_currentUserId);
     m_orders = orders;
     displayOrders(orders);
-}
-
-void CartWidget::refreshBalance()
-{
-    ui->balanceLabel->setText(QString("余额：¥ %1").arg(m_currentBalance, 0, 'f', 2));
+    updateStatus(QString("加载了 %1 条订单记录").arg(orders.size()));
 }
 
 bool CartWidget::addToCart(int productId, int quantity)
@@ -128,7 +119,7 @@ bool CartWidget::addToCart(int productId, int quantity)
         return false;
     }
 
-    for (CartItem &item : m_cartItems) {
+    for (CartTempItem &item : m_cartItems) {
         if (item.productId == productId) {
             int newQuantity = item.quantity + quantity;
             if (newQuantity > stock) {
@@ -143,15 +134,16 @@ bool CartWidget::addToCart(int productId, int quantity)
         }
     }
 
-    CartItem newItem;
+    ProductInfo product = DatabaseManager::instance().getProductById(productId);
+    CartTempItem newItem;
     newItem.productId = productId;
-    newItem.productName = ui->productCombo->currentText();
+    newItem.productName = product.name;
     newItem.quantity = quantity;
-    newItem.price = getProductPrice(productId);
-    newItem.total = quantity * newItem.price;
+    newItem.price = product.salePrice;
+    newItem.total = quantity * product.salePrice;
     m_cartItems.append(newItem);
     refreshCart();
-    showSuccess(QString("已添加 %1 x %2 件").arg(newItem.productName).arg(quantity));
+    showSuccess(QString("已添加 %1 x %2 件").arg(product.name).arg(quantity));
     return true;
 }
 
@@ -169,7 +161,7 @@ bool CartWidget::removeFromCart(int productId)
 
 bool CartWidget::updateCartQuantity(int productId, int quantity)
 {
-    for (CartItem &item : m_cartItems) {
+    for (CartTempItem &item : m_cartItems) {
         if (item.productId == productId) {
             if (quantity <= 0) {
                 return removeFromCart(productId);
@@ -200,15 +192,10 @@ bool CartWidget::clearCart()
     return true;
 }
 
-QList<CartItem> CartWidget::getCartItems()
-{
-    return m_cartItems;
-}
-
 double CartWidget::getCartTotal()
 {
     double total = 0;
-    for (const CartItem &item : m_cartItems) {
+    for (const CartTempItem &item : m_cartItems) {
         total += item.total;
     }
     return total;
@@ -230,7 +217,8 @@ bool CartWidget::checkout()
         return false;
     }
 
-    for (const CartItem &item : m_cartItems) {
+    // 检查所有商品库存
+    for (const CartTempItem &item : m_cartItems) {
         int stock = getProductStock(item.productId);
         if (item.quantity > stock) {
             showError(QString("商品 %1 库存不足！当前库存：%2 件")
@@ -239,6 +227,7 @@ bool CartWidget::checkout()
         }
     }
 
+    // 确认对话框
     QString msg = QString("确认下单？\n\n订单总额：¥ %1\n支付后余额：¥ %2")
                       .arg(total, 0, 'f', 2)
                       .arg(m_currentBalance - total, 0, 'f', 2);
@@ -250,39 +239,42 @@ bool CartWidget::checkout()
         return false;
     }
 
-    if (!deductBalance(m_currentUserId, total)) {
+    // 获取默认地址
+    QString address = getDefaultAddress();
+
+    // 创建订单
+    int orderId = DatabaseManager::instance().createSalesOrder(m_currentUserId, address, total, "购物车下单");
+    if (orderId < 0) {
+        showError("创建订单失败");
+        return false;
+    }
+
+    // 添加订单商品明细并扣减库存
+    for (const CartTempItem &item : m_cartItems) {
+        if (!DatabaseManager::instance().addOrderItem(orderId, item.productId, item.quantity, item.price, item.total)) {
+            showError(QString("添加订单商品 %1 失败").arg(item.productName));
+            return false;
+        }
+        DatabaseManager::instance().updateProductStock(item.productId, item.quantity);
+    }
+
+    // 扣款
+    if (!DatabaseManager::instance().updateBalance(m_currentUserId, -total)) {
         showError("扣款失败");
         return false;
     }
 
-    for (const CartItem &item : m_cartItems) {
-        if (!updateProductStock(item.productId, item.quantity)) {
-            showError(QString("更新商品 %1 库存失败").arg(item.productName));
-            return false;
-        }
-    }
-
-    Order newOrder;
-    newOrder.id = QDateTime::currentDateTime().toSecsSinceEpoch();
-    newOrder.orderNo = QDateTime::currentDateTime().toString("yyyyMMddhhmmss");
-    newOrder.totalAmount = total;
-    newOrder.status = "已支付";
-    newOrder.createTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
-    m_orders.prepend(newOrder);
-
+    // 清空购物车
     m_cartItems.clear();
     refreshCart();
-    refreshOrders();
     refreshBalance();
+    refreshOrders();
 
-    showSuccess(QString("下单成功！订单号：%1").arg(newOrder.orderNo));
+    showSuccess(QString("下单成功！订单号：%1").arg(orderId));
     return true;
 }
 
-QList<Order> CartWidget::getUserOrders()
-{
-    return m_orders;
-}
+// ========== UI 槽函数 ==========
 
 void CartWidget::onProductComboChanged(int index)
 {
@@ -290,6 +282,7 @@ void CartWidget::onProductComboChanged(int index)
         int productId = ui->productCombo->currentData().toInt();
         int stock = getProductStock(productId);
         double price = getProductPrice(productId);
+
         ui->stockLabel->setText(QString("库存：%1 件").arg(stock));
         ui->priceLabel->setText(QString("单价：¥ %1").arg(price, 0, 'f', 2));
         ui->quantitySpin->setMaximum(stock);
@@ -350,7 +343,9 @@ void CartWidget::onCartTableDoubleClicked(QTableWidgetItem *item)
     }
 }
 
-void CartWidget::displayCartItems(const QList<CartItem> &items)
+// ========== 内部辅助函数 ==========
+
+void CartWidget::displayCartItems(const QList<CartTempItem> &items)
 {
     ui->cartTable->setRowCount(0);
     for (int i = 0; i < items.size(); ++i) {
@@ -364,7 +359,7 @@ void CartWidget::displayCartItems(const QList<CartItem> &items)
     }
 }
 
-void CartWidget::addCartItemToTable(const CartItem &item, int row)
+void CartWidget::addCartItemToTable(const CartTempItem &item, int row)
 {
     ui->cartTable->setItem(row, 0, new QTableWidgetItem(QString::number(item.productId)));
     ui->cartTable->setItem(row, 1, new QTableWidgetItem(item.productName));
@@ -373,7 +368,7 @@ void CartWidget::addCartItemToTable(const CartItem &item, int row)
     ui->cartTable->setItem(row, 4, new QTableWidgetItem(QString::number(item.total, 'f', 2)));
 }
 
-void CartWidget::displayOrders(const QList<Order> &orders)
+void CartWidget::displayOrders(const QList<SalesOrderInfo> &orders)
 {
     ui->ordersTable->setRowCount(0);
     for (int i = 0; i < orders.size(); ++i) {
@@ -382,12 +377,13 @@ void CartWidget::displayOrders(const QList<Order> &orders)
     }
 }
 
-void CartWidget::addOrderToTable(const Order &order, int row)
+void CartWidget::addOrderToTable(const SalesOrderInfo &order, int row)
 {
-    ui->ordersTable->setItem(row, 0, new QTableWidgetItem(order.orderNo));
+    ui->ordersTable->setItem(row, 0, new QTableWidgetItem(QString::number(order.id)));
     ui->ordersTable->setItem(row, 1, new QTableWidgetItem(QString::number(order.totalAmount, 'f', 2)));
-    ui->ordersTable->setItem(row, 2, new QTableWidgetItem(order.status));
-    ui->ordersTable->setItem(row, 3, new QTableWidgetItem(order.createTime));
+    ui->ordersTable->setItem(row, 2, new QTableWidgetItem(order.address));
+    ui->ordersTable->setItem(row, 3, new QTableWidgetItem(order.remark));
+    ui->ordersTable->setItem(row, 4, new QTableWidgetItem(order.createdAt.toString("yyyy-MM-dd hh:mm:ss")));
 }
 
 void CartWidget::updateTotalDisplay()
@@ -413,35 +409,29 @@ void CartWidget::showSuccess(const QString &message)
     updateStatus(message);
 }
 
-int CartWidget::getProductStock(int productId)
-{
-    Q_UNUSED(productId);
-    return 50;
-}
-
 double CartWidget::getProductPrice(int productId)
 {
-    switch (productId) {
-    case 1001: return 4999.00;
-    case 1002: return 39.00;
-    case 1003: return 249.00;
-    default: return 0;
-    }
+    ProductInfo product = DatabaseManager::instance().getProductById(productId);
+    return product.salePrice;
 }
 
-bool CartWidget::deductBalance(int userId, double amount)
+int CartWidget::getProductStock(int productId)
 {
-    Q_UNUSED(userId);
-    if (amount <= m_currentBalance) {
-        m_currentBalance -= amount;
-        return true;
-    }
-    return false;
+    InventoryInfo inv = DatabaseManager::instance().getInventoryByProductId(productId);
+    return inv.quantity;
 }
 
-bool CartWidget::updateProductStock(int productId, int quantity)
+QString CartWidget::getDefaultAddress()
 {
-    Q_UNUSED(productId);
-    Q_UNUSED(quantity);
-    return true;
+    QList<BuyerAddressInfo> addresses = DatabaseManager::instance().getAddressesByUserId(m_currentUserId);
+    for (const BuyerAddressInfo &addr : addresses) {
+        if (addr.isDefault) {
+            return QString("%1 %2 %3 %4").arg(addr.province, addr.city, addr.district, addr.detail);
+        }
+    }
+    if (!addresses.isEmpty()) {
+        const BuyerAddressInfo &addr = addresses.first();
+        return QString("%1 %2 %3 %4").arg(addr.province, addr.city, addr.district, addr.detail);
+    }
+    return "";
 }

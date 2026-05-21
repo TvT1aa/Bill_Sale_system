@@ -10,6 +10,7 @@ project(BillandSale_system VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,7 +34,7 @@ set(PROJECT_SOURCES
         src/common/user.cpp
         src/common/user.h
 
-        # Login 模块 (View & Controller)
+        # Login 模块
         src/module/login/login_controllor.cpp
         src/module/login/login_controllor.h
         src/module/login/loginwidget.cpp
