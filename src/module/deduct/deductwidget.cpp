@@ -8,6 +8,10 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QTextEdit>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QPushButton>
+#include <QRegularExpression>
 
 DeductWidget::DeductWidget(int userId, int mode, QWidget *parent)
     : QWidget(parent)
@@ -65,12 +69,27 @@ void DeductWidget::setupCheckoutUI()
     m_tableWidget->setAlternatingRowColors(true);
     mainLayout->addWidget(m_tableWidget);
 
-    // 收货地址
+    // 收货地址区域
+    QLabel* addressLabel = new QLabel("收货地址", this);
+    addressLabel->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; margin-top: 10px; }");
+    mainLayout->addWidget(addressLabel);
+
     QHBoxLayout* addressLayout = new QHBoxLayout();
-    addressLayout->addWidget(new QLabel("收货地址:", this));
+    addressLayout->addWidget(new QLabel("选择地址:", this));
     m_addressCombo = new QComboBox(this);
     m_addressCombo->setMinimumWidth(400);
     addressLayout->addWidget(m_addressCombo);
+
+    m_addAddressBtn = new QPushButton("➕ 新增地址", this);
+    m_addAddressBtn->setFixedSize(100, 32);
+    m_addAddressBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; font-size: 12px; }");
+
+    m_refreshAddressBtn = new QPushButton("🔄 刷新", this);
+    m_refreshAddressBtn->setFixedSize(70, 32);
+    m_refreshAddressBtn->setStyleSheet("QPushButton { background-color: #409EFF; color: white; border-radius: 4px; font-size: 12px; }");
+
+    addressLayout->addWidget(m_addAddressBtn);
+    addressLayout->addWidget(m_refreshAddressBtn);
     addressLayout->addStretch();
     mainLayout->addLayout(addressLayout);
 
@@ -100,6 +119,8 @@ void DeductWidget::setupCheckoutUI()
     mainLayout->addLayout(btnLayout);
 
     connect(m_submitBtn, &QPushButton::clicked, this, &DeductWidget::onSubmitClicked);
+    connect(m_addAddressBtn, &QPushButton::clicked, this, &DeductWidget::onAddNewAddress);
+    connect(m_refreshAddressBtn, &QPushButton::clicked, this, &DeductWidget::onRefreshAddresses);
 }
 
 // ========== 管理员出库界面 ==========
@@ -194,6 +215,119 @@ void DeductWidget::setupAdminUI()
             });
 }
 
+// ========== 添加地址对话框 ==========
+void DeductWidget::showAddressDialog()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle("新增地址");
+    dialog.setFixedSize(450, 550);
+    dialog.setModal(true);
+
+    QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+    dialogLayout->setSpacing(15);
+    dialogLayout->setContentsMargins(20, 20, 20, 20);
+
+    QFormLayout* form = new QFormLayout();
+    form->setSpacing(12);
+    form->setLabelAlignment(Qt::AlignRight);
+
+    // 收货人
+    QLineEdit* nameEdit = new QLineEdit(&dialog);
+    nameEdit->setPlaceholderText("请输入收货人姓名");
+    nameEdit->setMinimumHeight(36);
+    form->addRow("收货人:", nameEdit);
+
+    // 手机号
+    QLineEdit* phoneEdit = new QLineEdit(&dialog);
+    phoneEdit->setPlaceholderText("请输入手机号码");
+    phoneEdit->setMinimumHeight(36);
+    form->addRow("手机号:", phoneEdit);
+
+    // 省份
+    QComboBox* provinceCombo = new QComboBox(&dialog);
+    provinceCombo->setEditable(true);
+    provinceCombo->addItems({"北京市", "上海市", "广东省", "江苏省", "浙江省", "四川省", "湖北省", "湖南省", "福建省", "山东省", "河南省", "河北省", "安徽省", "陕西省", "重庆市"});
+    provinceCombo->setMinimumHeight(36);
+    form->addRow("省份:", provinceCombo);
+
+    // 城市
+    QComboBox* cityCombo = new QComboBox(&dialog);
+    cityCombo->setEditable(true);
+    cityCombo->setMinimumHeight(36);
+    form->addRow("城市:", cityCombo);
+
+    // 区/县
+    QComboBox* districtCombo = new QComboBox(&dialog);
+    districtCombo->setEditable(true);
+    districtCombo->setMinimumHeight(36);
+    form->addRow("区/县:", districtCombo);
+
+    // 详细地址
+    QTextEdit* detailEdit = new QTextEdit(&dialog);
+    detailEdit->setPlaceholderText("请输入详细地址（街道、小区、门牌号）");
+    detailEdit->setFixedHeight(80);
+    form->addRow("详细地址:", detailEdit);
+
+    // 设为默认
+    QComboBox* isDefaultCombo = new QComboBox(&dialog);
+    isDefaultCombo->addItems({"否", "是"});
+    isDefaultCombo->setMinimumHeight(36);
+    form->addRow("设为默认:", isDefaultCombo);
+
+    dialogLayout->addLayout(form);
+
+    // 按钮
+    QHBoxLayout* btnLayout = new QHBoxLayout();
+    btnLayout->setSpacing(15);
+    QPushButton* submitBtn = new QPushButton("确认添加", &dialog);
+    QPushButton* cancelBtn = new QPushButton("取消", &dialog);
+    submitBtn->setFixedSize(120, 40);
+    cancelBtn->setFixedSize(80, 40);
+    submitBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; font-size: 14px; }");
+    cancelBtn->setStyleSheet("QPushButton { background-color: #909399; color: white; border-radius: 4px; font-size: 14px; }");
+    btnLayout->addStretch();
+    btnLayout->addWidget(submitBtn);
+    btnLayout->addWidget(cancelBtn);
+    btnLayout->addStretch();
+    dialogLayout->addLayout(btnLayout);
+
+    connect(submitBtn, &QPushButton::clicked, [&]() {
+        if (nameEdit->text().isEmpty()) {
+            QMessageBox::warning(&dialog, "提示", "请输入收货人姓名");
+            return;
+        }
+        if (phoneEdit->text().isEmpty()) {
+            QMessageBox::warning(&dialog, "提示", "请输入手机号");
+            return;
+        }
+        QString phone = phoneEdit->text();
+        if (phone.length() != 11 || !phone.contains(QRegularExpression("^1[3-9]\\d{9}$"))) {
+            QMessageBox::warning(&dialog, "提示", "请输入有效的手机号码");
+            return;
+        }
+        if (detailEdit->toPlainText().isEmpty()) {
+            QMessageBox::warning(&dialog, "提示", "请输入详细地址");
+            return;
+        }
+
+        QVariantMap address;
+        address["name"] = nameEdit->text();
+        address["phone"] = phoneEdit->text();
+        address["province"] = provinceCombo->currentText();
+        address["city"] = cityCombo->currentText();
+        address["district"] = districtCombo->currentText();
+        address["detail"] = detailEdit->toPlainText();
+        address["isDefault"] = (isDefaultCombo->currentIndex() == 1);
+        address["userId"] = m_userId;
+
+        emit addAddressRequested(address);
+        dialog.accept();
+    });
+    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
+}
+
 // ========== 用户结算槽 ==========
 void DeductWidget::onSubmitClicked()
 {
@@ -208,6 +342,16 @@ void DeductWidget::onSubmitClicked()
     }
     int addressId = m_addressCombo->currentData().toInt();
     emit submitOrderRequested(addressId, "");
+}
+
+void DeductWidget::onAddNewAddress()
+{
+    showAddressDialog();
+}
+
+void DeductWidget::onRefreshAddresses()
+{
+    emit refreshAddressesRequested();
 }
 
 void DeductWidget::onCartItemsLoaded(const QList<QVariantMap>& items, double total)
@@ -243,6 +387,11 @@ void DeductWidget::onAddressesLoaded(const QList<QVariantMap>& addresses)
             .arg(addr["district"].toString())
             .arg(addr["detail"].toString());
         m_addressCombo->addItem(fullAddr, addr["id"].toInt());
+
+        if (addr["isDefault"].toBool()) {
+            int index = m_addressCombo->count() - 1;
+            m_addressCombo->setCurrentIndex(index);
+        }
     }
 }
 
@@ -267,6 +416,16 @@ void DeductWidget::onOrderResult(bool success, const QString& message)
         emit loadCheckoutDataRequested();
     } else {
         QMessageBox::warning(this, "下单失败", message);
+    }
+}
+
+void DeductWidget::onAddAddressResult(bool success, const QString& message)
+{
+    if (success) {
+        QMessageBox::information(this, "成功", message);
+        emit refreshAddressesRequested();
+    } else {
+        QMessageBox::warning(this, "失败", message);
     }
 }
 

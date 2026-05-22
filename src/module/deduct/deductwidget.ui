@@ -6,12 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
+    <width>800</width>
     <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>出库管理</string>
+   <string>结算/出库</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: #F5F7FA;</string>
   </property>
  </widget>
  <resources/>
