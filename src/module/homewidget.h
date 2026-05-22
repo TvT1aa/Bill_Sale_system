@@ -7,7 +7,6 @@
 #include <QVBoxLayout>
 #include <QLabel>
 
-// 前置声明
 class InventoryWidget;
 class CartWidget;
 class AddressWidget;

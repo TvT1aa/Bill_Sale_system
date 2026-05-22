@@ -16,10 +16,9 @@ CartWidget::CartWidget(int userId, int role, QWidget *parent)
     : QWidget(parent)
     , m_userId(userId)
     , m_role(role)
-    , m_currentBalance(500.00)  // 示例余额 500 元
 {
     setupUI(role);
-    loadSampleProducts();  // 加载示例商品
+    loadSampleProducts();
     emit refreshRequested();
 }
 
@@ -69,22 +68,6 @@ void CartWidget::setupUserUI()
 {
     QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(this->layout());
 
-    // 顶部余额显示和充值按钮栏
-    QHBoxLayout* topBarLayout = new QHBoxLayout();
-
-    m_balanceLabel = new QLabel(QString("我的余额: ¥%1").arg(m_currentBalance, 0, 'f', 2), this);
-    m_balanceLabel->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; color: #409EFF; padding: 5px 10px; background-color: #ECF5FF; border-radius: 4px; }");
-
-    m_rechargeBtn = new QPushButton("充值", this);
-    m_rechargeBtn->setFixedSize(80, 32);
-    m_rechargeBtn->setStyleSheet("QPushButton { background-color: #E6A23C; color: white; border-radius: 4px; font-size: 12px; }");
-
-    topBarLayout->addWidget(m_balanceLabel);
-    topBarLayout->addWidget(m_rechargeBtn);
-    topBarLayout->addStretch();
-
-    mainLayout->insertLayout(0, topBarLayout);
-
     // 搜索栏
     QHBoxLayout* topLayout = new QHBoxLayout();
     m_searchEdit = new QLineEdit(this);
@@ -104,7 +87,7 @@ void CartWidget::setupUserUI()
     topLayout->addWidget(m_addToCartBtn);
     topLayout->addStretch();
 
-    mainLayout->insertLayout(1, topLayout);
+    mainLayout->insertLayout(0, topLayout);
 
     // 商品表格
     m_tableWidget = new QTableWidget(this);
@@ -117,11 +100,9 @@ void CartWidget::setupUserUI()
     m_tableWidget->setAlternatingRowColors(true);
     m_tableWidget->setFixedHeight(250);
 
-    // 连接信号
     connect(m_searchBtn, &QPushButton::clicked, this, &CartWidget::onSearchProduct);
     connect(m_refreshBtn, &QPushButton::clicked, this, &CartWidget::onRefreshClicked);
     connect(m_addToCartBtn, &QPushButton::clicked, this, &CartWidget::onAddToCart);
-    connect(m_rechargeBtn, &QPushButton::clicked, this, &CartWidget::onRecharge);
 }
 
 void CartWidget::setupAdminUI()
@@ -175,7 +156,6 @@ void CartWidget::setupAdminUI()
     m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_tableWidget->setAlternatingRowColors(true);
 
-    // 连接信号
     connect(m_searchBtn, &QPushButton::clicked, this, &CartWidget::onSearchProduct);
     connect(m_refreshBtn, &QPushButton::clicked, this, &CartWidget::onRefreshClicked);
     connect(m_addToPurchaseBtn, &QPushButton::clicked, this, &CartWidget::onAddToPurchase);
@@ -183,7 +163,6 @@ void CartWidget::setupAdminUI()
 
 void CartWidget::loadSampleProducts()
 {
-    // 示例商品数据
     QList<QVariantMap> sampleProducts;
 
     QVariantMap p1;
@@ -249,10 +228,6 @@ void CartWidget::onSearchProduct()
     if (keyword.isEmpty()) {
         loadSampleProducts();
     } else {
-        // 模拟搜索
-        QList<QVariantMap> results;
-        QList<QVariantMap> allProducts;
-        // 这里简化处理，实际应由后端处理
         loadSampleProducts();
     }
 }
@@ -332,58 +307,7 @@ void CartWidget::onRemovePurchaseItem()
 
 void CartWidget::onCheckout()
 {
-    // 检查购物车是否为空
-    if (m_tableWidget->rowCount() == 0 || (m_role == 0 && m_tableWidget->columnCount() > 0 && m_tableWidget->rowCount() > 0)) {
-        // 这里简化判断，实际应该检查购物车数据
-        emit checkoutRequested();
-    } else {
-        emit checkoutRequested();
-    }
-}
-
-void CartWidget::onRecharge()
-{
-    QDialog dialog(this);
-    dialog.setWindowTitle("账户充值");
-    dialog.setFixedSize(300, 180);
-
-    QFormLayout* form = new QFormLayout(&dialog);
-
-    QLabel* infoLabel = new QLabel(QString("当前余额: ¥%1").arg(m_currentBalance, 0, 'f', 2), &dialog);
-    infoLabel->setStyleSheet("QLabel { font-size: 14px; color: #409EFF; }");
-
-    QDoubleSpinBox* amountSpin = new QDoubleSpinBox(&dialog);
-    amountSpin->setRange(0.01, 10000);
-    amountSpin->setPrefix("¥");
-    amountSpin->setSuffix(" 元");
-    amountSpin->setDecimals(2);
-    amountSpin->setValue(100);
-
-    QPushButton* submitBtn = new QPushButton("确认充值", &dialog);
-    QPushButton* cancelBtn = new QPushButton("取消", &dialog);
-    submitBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; }");
-    cancelBtn->setStyleSheet("QPushButton { background-color: #909399; color: white; border-radius: 4px; }");
-
-    QHBoxLayout* btnLayout = new QHBoxLayout();
-    btnLayout->addWidget(submitBtn);
-    btnLayout->addWidget(cancelBtn);
-
-    form->addRow(infoLabel);
-    form->addRow("充值金额:", amountSpin);
-    form->addRow(btnLayout);
-
-    connect(submitBtn, &QPushButton::clicked, [&]() {
-        double amount = amountSpin->value();
-        if (amount <= 0) {
-            QMessageBox::warning(&dialog, "提示", "请输入有效的充值金额");
-            return;
-        }
-        emit rechargeRequested(amount);
-        dialog.accept();
-    });
-    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    dialog.exec();
+    emit checkoutRequested();
 }
 
 void CartWidget::onSubmitPurchase()
@@ -400,6 +324,7 @@ void CartWidget::onSubmitPurchase()
 void CartWidget::onCartLoaded(const QList<QVariantMap>& cartItems)
 {
     // 购物车表格已在其他地方处理
+    Q_UNUSED(cartItems)
 }
 
 void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
@@ -412,7 +337,6 @@ void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
         m_tableWidget->setItem(i, 2, new QTableWidgetItem(QString("¥%1").arg(p["salePrice"].toDouble(), 0, 'f', 2)));
         m_tableWidget->setItem(i, 3, new QTableWidgetItem(QString::number(p["quantity"].toInt())));
 
-        // 添加"+"按钮
         QPushButton* addBtn = new QPushButton("➕ 加入购物车");
         addBtn->setFixedSize(100, 28);
         addBtn->setStyleSheet("QPushButton { background-color: #409EFF; color: white; border-radius: 4px; font-size: 11px; }");
@@ -433,7 +357,6 @@ void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
         });
         m_tableWidget->setCellWidget(i, 4, addBtn);
 
-        // 占位列
         m_tableWidget->setCellWidget(i, 5, new QWidget());
     }
 }
@@ -486,20 +409,6 @@ void CartWidget::onPurchaseResult(bool success, const QString& message)
 
 void CartWidget::onBalanceInfo(double balance, const QString& message)
 {
-    m_currentBalance = balance;
-    if (m_balanceLabel) {
-        m_balanceLabel->setText(QString("我的余额: ¥%1").arg(balance, 0, 'f', 2));
-    }
+    Q_UNUSED(balance)
     QMessageBox::information(this, "余额信息", message);
-}
-
-void CartWidget::onRechargeResult(bool success, const QString& message)
-{
-    if (success) {
-        // 解析消息中的余额
-        QMessageBox::information(this, "充值成功", message);
-        emit refreshRequested();
-    } else {
-        QMessageBox::warning(this, "充值失败", message);
-    }
 }

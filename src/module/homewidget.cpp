@@ -97,8 +97,7 @@ void HomeWidget::setupUserMenu()
 {
     QList<QPair<QString, QString>> menus = {
         {"🛒 购物车", "cart"},
-        {"📍 地址", "address"},
-        {"💰 余额", "balance"}
+        {"📍 结算", "address"}
     };
 
     for (const auto& menu : menus) {
@@ -139,10 +138,6 @@ void HomeWidget::createUserPages()
     m_addressWidget = new AddressWidget(m_userId, this);
     m_stackedWidget->addWidget(m_addressWidget);
 
-    // 余额页面
-    m_balanceWidget = new BalanceWidget(m_userId, 0, this);
-    m_stackedWidget->addWidget(m_balanceWidget);
-
     // 购物车结算跳转到结算页面
     connect(m_cartWidget, &CartWidget::checkoutRequested, this, [this]() {
         m_stackedWidget->setCurrentWidget(m_deductWidget);
@@ -164,7 +159,7 @@ void HomeWidget::createAdminPages()
     m_deductWidget = new DeductWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_deductWidget);
 
-    // 余额页面
+    // 余额页面（管理员模式：库存账户）
     m_balanceWidget = new BalanceWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_balanceWidget);
 
@@ -195,7 +190,7 @@ void HomeWidget::refreshCurrentPage()
         emit m_cartWidget->refreshRequested();
     } else if (m_role == 0 && currentWidget == m_addressWidget && m_addressWidget) {
         emit m_addressWidget->refreshRequested();
-    } else if (currentWidget == m_balanceWidget && m_balanceWidget) {
+    } else if (m_role == 1 && currentWidget == m_balanceWidget && m_balanceWidget) {
         emit m_balanceWidget->refreshRequested();
     } else if (m_role == 0 && currentWidget == m_deductWidget && m_deductWidget) {
         emit m_deductWidget->loadCheckoutDataRequested();
