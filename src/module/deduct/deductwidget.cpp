@@ -20,11 +20,6 @@ DeductWidget::DeductWidget(int userId, int mode, QWidget *parent)
     , m_currentTotal(0)
 {
     setupUI(mode);
-    if (mode == 0) {
-        emit loadCheckoutDataRequested();
-    } else {
-        emit refreshRequested();
-    }
 }
 
 DeductWidget::~DeductWidget()
@@ -345,7 +340,7 @@ void DeductWidget::onCartItemsLoaded(const QList<QVariantMap>& items, double tot
     for (int i = 0; i < items.size(); i++) {
         const QVariantMap& item = items[i];
         double subtotal = item["quantity"].toInt() * item["price"].toDouble();
-        m_tableWidget->setItem(i, 0, new QTableWidgetItem(item["name"].toString()));
+        m_tableWidget->setItem(i, 0, new QTableWidgetItem(item["productName"].toString()));
         m_tableWidget->setItem(i, 1, new QTableWidgetItem(QString("¥%1").arg(item["price"].toDouble(), 0, 'f', 2)));
         m_tableWidget->setItem(i, 2, new QTableWidgetItem(QString::number(item["quantity"].toInt())));
         m_tableWidget->setItem(i, 3, new QTableWidgetItem(QString("¥%1").arg(subtotal, 0, 'f', 2)));

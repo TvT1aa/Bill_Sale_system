@@ -110,9 +110,9 @@ bool DatabaseManager::updateProductStock(int productId, int quantityChange)
 {
     if (!isConnected()) return false;
 
-    // 1. 复用队友的第1个函数：通过商品ID查出当前的绝对库存
+    // 通过商品ID查出当前的绝对库存
     InventoryInfo inv = getInventoryByProductId(productId);
-    if (inv.id == 0) {
+    if (inv.id < 0) {
         qDebug() << "库存扣减失败：未找到该商品的库存记录, productId:" << productId;
         return false;
     }

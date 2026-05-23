@@ -2,6 +2,12 @@
 #include "databasemanager.h" // 确保能拿到底层的单例接口
 #include <QDebug>
 
+Cart& Cart::instance()
+{
+    static Cart _instance;
+    return _instance;
+}
+
 Cart::Cart(QObject *parent)
     : QObject(parent)
     , m_userId(0)
@@ -137,7 +143,7 @@ double Cart::getCartTotal()
 
 // ==================== 结算下单 ====================
 
-int Cart::checkout()
+int Cart::checkout(const QString& address)
 {
     if (m_cartItems.isEmpty()) {
         m_lastError = "购物车为空，请先添加商品";
@@ -156,27 +162,21 @@ int Cart::checkout()
         }
     }
 
-    // 获取默认地址
-    QString address = getDefaultAddress();
+    // 使用传入的地址，如果没有则获取默认地址
+    QString finalAddress = address.isEmpty() ? getDefaultAddress() : address;
 
     // 对接队友的 addSalesOrder 接口
     int orderId = -1;
-    if (!DatabaseManager::instance().addSalesOrder(m_userId, address, "购物车下单", &orderId)) {
+    if (!DatabaseManager::instance().addSalesOrder(m_userId, finalAddress, "购物车下单", &orderId)) {
         m_lastError = "创建订单失败";
         return -1;
     }
 
-    // 添加订单商品明细并扣减库存
+    // 添加订单商品明细
+    // 注意：库存已在加入购物车时扣减，这里只需创建订单记录，不再重复扣库存
     for (const CartItem &item : m_cartItems) {
-        // 对接队友的 addSalesOrderItem 接口
         if (!DatabaseManager::instance().addSalesOrderItem(orderId, item.productId, item.quantity, item.price)) {
             m_lastError = QString("添加订单商品 %1 失败").arg(item.productName);
-            return -1;
-        }
-
-        // 调用库存扣减函数
-        if (!DatabaseManager::instance().updateProductStock(item.productId, item.quantity)) {
-            m_lastError = QString("商品 %1 库存扣减失败").arg(item.productName);
             return -1;
         }
     }

@@ -28,6 +28,9 @@ class Cart : public QObject
     Q_OBJECT
 
 public:
+    /// 单例模式，保证所有控制器共享同一个购物车实例
+    static Cart& instance();
+
     explicit Cart(QObject *parent = nullptr);
 
     void setCurrentUser(int userId);
@@ -60,7 +63,7 @@ public:
     // ==================== 结算下单 ====================
 
     /// 结算（创建订单、扣余额、扣库存），成功返回订单ID，失败返回-1
-    int checkout();
+    int checkout(const QString& address = QString());
 
     /// 获取最后错误信息
     QString lastError() const { return m_lastError; }

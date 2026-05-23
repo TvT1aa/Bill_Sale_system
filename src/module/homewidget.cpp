@@ -5,6 +5,9 @@
 #include "balance/balancewidget.h"
 #include "deduct/deductwidget.h"
 #include "report/reportwidget.h"
+#include "cart_in/cart_controllor.h"
+#include "address/address_controllor.h"
+#include "deduct/deduct_controllor.h"
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QFrame>
@@ -123,22 +126,26 @@ void HomeWidget::setupAdminMenu()
 
     connect(m_menuList, &QListWidget::currentRowChanged, this, &HomeWidget::onMenuClicked);
 }
-
 void HomeWidget::createUserPages()
 {
-    // 购物车页面
     m_cartWidget = new CartWidget(m_userId, 0, this);
     m_stackedWidget->addWidget(m_cartWidget);
 
-    // 结算页面（使用 deductwidget，mode=0 用户结算模式）
     m_deductWidget = new DeductWidget(m_userId, 0, this);
     m_stackedWidget->addWidget(m_deductWidget);
 
-    // 地址页面
     m_addressWidget = new AddressWidget(m_userId, this);
     m_stackedWidget->addWidget(m_addressWidget);
 
-    // 购物车结算跳转到结算页面
+    // 先创建所有控制器，确保信号连接就绪
+    new cart_controllor(m_userId, m_cartWidget, this);
+    new address_controllor(m_userId, m_addressWidget, this);
+    new deduct_controllor(m_userId, 0, m_deductWidget, this);
+
+    // 控制器连接完成后，再触发初始数据加载
+    emit m_cartWidget->refreshRequested();
+    emit m_deductWidget->loadCheckoutDataRequested();
+
     connect(m_cartWidget, &CartWidget::checkoutRequested, this, [this]() {
         m_stackedWidget->setCurrentWidget(m_deductWidget);
         emit m_deductWidget->loadCheckoutDataRequested();
@@ -147,23 +154,18 @@ void HomeWidget::createUserPages()
 
 void HomeWidget::createAdminPages()
 {
-    // 库存页面
     m_inventoryWidget = new InventoryWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_inventoryWidget);
 
-    // 进货页面
     m_cartWidget = new CartWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_cartWidget);
 
-    // 出库页面（mode=1 管理员模式）
     m_deductWidget = new DeductWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_deductWidget);
 
-    // 余额页面（管理员模式：库存账户）
     m_balanceWidget = new BalanceWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_balanceWidget);
 
-    // 报表页面
     m_reportWidget = new ReportWidget(m_userId, this);
     m_stackedWidget->addWidget(m_reportWidget);
 }

@@ -1,16 +1,13 @@
 #include <QApplication>
-#include "homewidget.h"
-#include "databasemanager.h"
 #include <QStyleFactory>
 #include "thememanager.h"
-#include <QDebug>
 #include "databasemanager.h"
 #include "module/login/loginwidget.h"
 #include "module/login/login_controllor.h"
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
-
     QApplication a(argc, argv);
 
     ThemeManager::forceLightTheme();
