@@ -12,42 +12,37 @@ class BalanceWidget : public QWidget
     Q_OBJECT
 
 public:
+    // role 参数如果其他地方强依赖可以保留，但在内部我们不再根据角色分流 UI
     explicit BalanceWidget(int userId, int role, QWidget *parent = nullptr);
     ~BalanceWidget();
 
-signals:
-    // 向后端请求数据的信号
-    void refreshRequested();
-    void rechargeRequested(double amount);           // 用户充值
-    void adjustBalanceRequested(double amount, const QString& remark);  // 管理员调整余额
+    signals:
+        // 向后端请求数据的信号
+        void refreshRequested();
+    // 只保留管理员调整余额（进货资金支出/手动平账）的信号
+    void adjustBalanceRequested(double amount, const QString& remark);
 
 public slots:
-    // 后端调用的槽
+    // 后端调用的槽（依然由后端把管理员的账户余额、账目流水喂给这个界面）
     void onBalanceLoaded(double balance, const QString& accountName);
     void onTransactionsLoaded(const QList<QVariantMap>& transactions);
     void onOperationSuccess(const QString& message);
     void onOperationError(const QString& error);
 
 private slots:
-    void onRecharge();
     void onAdjustBalance();
     void onRefreshClicked();
 
 private:
-    void setupUI(int role);
-    void setupUserUI();     // 用户界面（查看余额+充值）
-    void setupAdminUI();    // 管理员界面（查看库存账户余额+调整）
+    void setupUI(); // 统一的 UI 初始化，不再区分用户/管理员
 
+    // 核心显示控件
     QLabel* m_balanceLabel;
     QLabel* m_accountNameLabel;
     QTableWidget* m_transactionTable;
     QPushButton* m_refreshBtn;
 
-    // 用户专用
-    QLineEdit* m_rechargeEdit;
-    QPushButton* m_rechargeBtn;
-
-    // 管理员专用
+    // 管理员专用：余额调整与流水账目备注
     QLineEdit* m_adjustAmountEdit;
     QLineEdit* m_adjustRemarkEdit;
     QPushButton* m_adjustBtn;

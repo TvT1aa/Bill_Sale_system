@@ -10,7 +10,8 @@ BalanceWidget::BalanceWidget(int userId, int role, QWidget *parent)
     , m_userId(userId)
     , m_role(role)
 {
-    setupUI(role);
+    // 统一初始化管理员界面，不再受 role 干扰
+    setupUI();
     emit refreshRequested();
 }
 
@@ -18,13 +19,13 @@ BalanceWidget::~BalanceWidget()
 {
 }
 
-void BalanceWidget::setupUI(int role)
+void BalanceWidget::setupUI()
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 20, 20, 20);
     mainLayout->setSpacing(15);
 
-    // 余额显示区域
+    // ================= 1. 余额显示区域 =================
     QWidget* balanceWidget = new QWidget(this);
     balanceWidget->setStyleSheet("QWidget { background-color: #E6F7FF; border-radius: 8px; }");
     QVBoxLayout* balanceLayout = new QVBoxLayout(balanceWidget);
@@ -41,72 +42,7 @@ void BalanceWidget::setupUI(int role)
 
     mainLayout->addWidget(balanceWidget);
 
-    // 操作区域
-    if (role == 0) {
-        setupUserUI();
-    } else {
-        setupAdminUI();
-    }
-
-    // 交易记录表格
-    QLabel* historyLabel = new QLabel("交易记录", this);
-    historyLabel->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; margin-top: 10px; }");
-    mainLayout->addWidget(historyLabel);
-
-    m_transactionTable = new QTableWidget(this);
-    m_transactionTable->setColumnCount(5);
-    QStringList headers = {"时间", "类型", "金额", "余额", "备注"};
-    m_transactionTable->setHorizontalHeaderLabels(headers);
-    m_transactionTable->horizontalHeader()->setStretchLastSection(true);
-    m_transactionTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_transactionTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    m_transactionTable->setAlternatingRowColors(true);
-    mainLayout->addWidget(m_transactionTable);
-
-    // 刷新按钮
-    QHBoxLayout* bottomLayout = new QHBoxLayout();
-    bottomLayout->addStretch();
-    m_refreshBtn = new QPushButton("刷新", this);
-    m_refreshBtn->setFixedSize(80, 32);
-    bottomLayout->addWidget(m_refreshBtn);
-    mainLayout->addLayout(bottomLayout);
-
-    connect(m_refreshBtn, &QPushButton::clicked, this, &BalanceWidget::onRefreshClicked);
-}
-
-void BalanceWidget::setupUserUI()
-{
-    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(this->layout());
-
-    // 充值区域
-    QWidget* rechargeWidget = new QWidget(this);
-    rechargeWidget->setStyleSheet("QWidget { background-color: #F5F7FA; border-radius: 8px; }");
-    QHBoxLayout* rechargeLayout = new QHBoxLayout(rechargeWidget);
-
-    QLabel* amountLabel = new QLabel("充值金额:", this);
-    m_rechargeEdit = new QLineEdit(this);
-    m_rechargeEdit->setPlaceholderText("请输入充值金额");
-    m_rechargeEdit->setFixedWidth(200);
-    m_rechargeBtn = new QPushButton("确认充值", this);
-    m_rechargeBtn->setFixedSize(100, 32);
-    m_rechargeBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; }");
-
-    rechargeLayout->addStretch();
-    rechargeLayout->addWidget(amountLabel);
-    rechargeLayout->addWidget(m_rechargeEdit);
-    rechargeLayout->addWidget(m_rechargeBtn);
-    rechargeLayout->addStretch();
-
-    mainLayout->insertWidget(1, rechargeWidget);
-
-    connect(m_rechargeBtn, &QPushButton::clicked, this, &BalanceWidget::onRecharge);
-}
-
-void BalanceWidget::setupAdminUI()
-{
-    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(this->layout());
-
-    // 余额调整区域
+    // ================= 2. 管理员余额调整区域 =================
     QWidget* adjustWidget = new QWidget(this);
     adjustWidget->setStyleSheet("QWidget { background-color: #F5F7FA; border-radius: 8px; }");
     QHBoxLayout* adjustLayout = new QHBoxLayout(adjustWidget);
@@ -133,34 +69,51 @@ void BalanceWidget::setupAdminUI()
     adjustLayout->addWidget(m_adjustBtn);
     adjustLayout->addStretch();
 
-    mainLayout->insertWidget(1, adjustWidget);
+    mainLayout->addWidget(adjustWidget); // 直接作为核心组件加入布局
 
+    // ================= 3. 交易记录表格 =================
+    QLabel* historyLabel = new QLabel("资金流水明细", this);
+    historyLabel->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; margin-top: 10px; }");
+    mainLayout->addWidget(historyLabel);
+
+    m_transactionTable = new QTableWidget(this);
+    m_transactionTable->setColumnCount(5);
+    QStringList headers = {"时间", "类型", "变动金额", "当前变动后余额", "备注说明"};
+    m_transactionTable->setHorizontalHeaderLabels(headers);
+    m_transactionTable->horizontalHeader()->setStretchLastSection(true);
+    m_transactionTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_transactionTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_transactionTable->setAlternatingRowColors(true);
+    mainLayout->addWidget(m_transactionTable);
+
+    // ================= 4. 底部刷新按钮 =================
+    QHBoxLayout* bottomLayout = new QHBoxLayout();
+    bottomLayout->addStretch();
+    m_refreshBtn = new QPushButton("刷新", this);
+    m_refreshBtn->setFixedSize(80, 32);
+    bottomLayout->addWidget(m_refreshBtn);
+    mainLayout->addLayout(bottomLayout);
+
+    // 信号槽连接
     connect(m_adjustBtn, &QPushButton::clicked, this, &BalanceWidget::onAdjustBalance);
-}
-
-void BalanceWidget::onRecharge()
-{
-    double amount = m_rechargeEdit->text().toDouble();
-    if (amount <= 0) {
-        QMessageBox::warning(this, "提示", "请输入有效的充值金额");
-        return;
-    }
-    emit rechargeRequested(amount);
-    m_rechargeEdit->clear();
+    connect(m_refreshBtn, &QPushButton::clicked, this, &BalanceWidget::onRefreshClicked);
 }
 
 void BalanceWidget::onAdjustBalance()
 {
     double amount = m_adjustAmountEdit->text().toDouble();
     if (amount == 0) {
-        QMessageBox::warning(this, "提示", "请输入调整金额（非零）");
+        QMessageBox::warning(this, "提示", "请输入有效的调整金额（非零）");
         return;
     }
     QString remark = m_adjustRemarkEdit->text().trimmed();
     if (remark.isEmpty()) {
         remark = "管理员手动调整";
     }
+
+    // 发出调整资金信号，由后端接收并改写商户账本
     emit adjustBalanceRequested(amount, remark);
+
     m_adjustAmountEdit->clear();
     m_adjustRemarkEdit->clear();
 }
@@ -170,7 +123,7 @@ void BalanceWidget::onRefreshClicked()
     emit refreshRequested();
 }
 
-// ========== 后端调用的槽 ==========
+// ========== 后端调用的槽（完全保留，用于展示管理员数据） ==========
 
 void BalanceWidget::onBalanceLoaded(double balance, const QString& accountName)
 {
@@ -194,7 +147,7 @@ void BalanceWidget::onTransactionsLoaded(const QList<QVariantMap>& transactions)
 void BalanceWidget::onOperationSuccess(const QString& message)
 {
     QMessageBox::information(this, "成功", message);
-    emit refreshRequested();
+    emit refreshRequested(); // 操作成功后自动刷新资产看板
 }
 
 void BalanceWidget::onOperationError(const QString& error)

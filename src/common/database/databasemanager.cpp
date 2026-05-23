@@ -101,3 +101,31 @@ bool DatabaseManager::execute(const QString& sql, const QList<QVariant>& args)
     }
     return true;
 }
+/**
+ * @brief 根据商品ID扣减对应库存
+ * @param productId 商品ID
+ * @param quantityChange 购买的数量
+ */
+bool DatabaseManager::updateProductStock(int productId, int quantityChange)
+{
+    if (!isConnected()) return false;
+
+    // 1. 复用队友的第1个函数：通过商品ID查出当前的绝对库存
+    InventoryInfo inv = getInventoryByProductId(productId);
+    if (inv.id == 0) {
+        qDebug() << "库存扣减失败：未找到该商品的库存记录, productId:" << productId;
+        return false;
+    }
+
+    // 2. 再次做安全校验
+    if (inv.quantity < quantityChange) {
+        qDebug() << "库存扣减失败：当前库存" << inv.quantity << "少于请求扣减量" << quantityChange;
+        return false;
+    }
+
+    // 3. 计算扣减后的剩余绝对数量
+    int newQuantity = inv.quantity - quantityChange;
+
+    // 4. 复用队友的第4个函数：传入库存主键ID和新数量进行更新
+    return updateQuantity(inv.id, newQuantity);
+}

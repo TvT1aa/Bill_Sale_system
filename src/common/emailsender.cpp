@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QDateTime>
 
+// 构造函数：初始化网络 Socket、定时器及默认状态
 EmailSender::EmailSender(QObject *parent)
     : QObject(parent)
     , m_socket(new QSslSocket(this))
@@ -11,16 +12,17 @@ EmailSender::EmailSender(QObject *parent)
     , m_useSSL(true)
     , m_state(Idle)
 {
-    // 连接信号
+    // 连接信号槽：监听连接、数据接收、错误发生
     connect(m_socket, &QSslSocket::connected, this, &EmailSender::onConnected);
     connect(m_socket, &QSslSocket::readyRead, this, &EmailSender::onReadyRead);
     connect(m_socket, &QSslSocket::errorOccurred, this, &EmailSender::onErrorOccurred);
 
-    // 超时处理
+    // 超时处理：如果 30 秒内流程没走完，则强制断开，防止阻塞
     m_timeout->setSingleShot(true);
     connect(m_timeout, &QTimer::timeout, this, &EmailSender::onTimeout);
 }
 
+// 析构函数：确保退出前断开网络连接
 EmailSender::~EmailSender()
 {
     if (m_socket->state() != QAbstractSocket::UnconnectedState) {
@@ -28,6 +30,7 @@ EmailSender::~EmailSender()
     }
 }
 
+// 设置 SMTP 服务器参数
 void EmailSender::setServer(const QString &host, int port, bool useSSL)
 {
     m_smtpHost = host;
@@ -35,318 +38,193 @@ void EmailSender::setServer(const QString &host, int port, bool useSSL)
     m_useSSL = useSSL;
 }
 
+// 设置发件人身份认证信息
 void EmailSender::setCredentials(const QString &username, const QString &password)
 {
     m_username = username;
     m_password = password;
 }
 
-bool EmailSender::sendVerificationCode(const QString &to,
-                                       const QString &code,
-                                       const QString &account)
+// 公开接口：发起邮件发送流程
+bool EmailSender::sendVerificationCode(const QString &to, const QString &code, const QString &account)
 {
-    if (m_smtpHost.isEmpty()) {
-        m_lastError = "未配置 SMTP 服务器地址";
-        emit emailSent(false, m_lastError);
-        return false;
-    }
-
-    if (m_username.isEmpty() || m_password.isEmpty()) {
-        m_lastError = "未配置邮箱账号或授权码";
-        emit emailSent(false, m_lastError);
+    // 基础配置检查
+    if (m_smtpHost.isEmpty() || m_username.isEmpty() || m_password.isEmpty()) {
+        emit emailSent(false, "配置缺失");
         return false;
     }
 
     m_toEmail = to;
-    m_state = Connecting;
+    m_state = Connecting; // 状态机起点
     m_responseBuffer.clear();
-    m_lastError.clear();
 
-    // 构建邮件主题和正文
-    m_subject = QStringLiteral("密码找回 - 验证码");
+    // 构建邮件正文（支持中文）
+    m_body = QStringLiteral("【%2】").arg(code);
 
-    QString greeting = account.isEmpty() ? "尊敬的用户" : account;
-    m_body = QStringLiteral(
-        "%1，您好！\n\n"
-        "您正在进行密码找回操作，您的验证码为：\n\n"
-        "【%2】\n\n"
-        "验证码有效期为 5 分钟，请尽快操作。\n"
-        "如非本人操作，请忽略此邮件。\n\n"
-        "（本邮件由系统自动发送，请勿回复）"
-    ).arg(greeting, code);
-
-    qDebug() << "[EmailSender] 开始发送邮件到:" << to;
-
-    // 发起连接
+    // 发起连接：根据是否使用SSL选择加密或明文连接
     if (m_useSSL) {
         m_socket->connectToHostEncrypted(m_smtpHost, m_smtpPort);
     } else {
         m_socket->connectToHost(m_smtpHost, m_smtpPort);
     }
 
-    m_timeout->start(TIMEOUT_MS);
+    m_timeout->start(30000); // 启动超时监控
     return true;
 }
 
-// ==================== 私有槽实现 ====================
+// ==================== 私有槽实现：状态机驱动 ====================
 
+// 仅仅表示网络物理连接已建立，等待服务器发送 220 欢迎语
 void EmailSender::onConnected()
 {
-    qDebug() << "[EmailSender] 已连接到 SMTP 服务器";
-    m_state = EhloSent;
-    // 等待服务器发送欢迎消息（在 onReadyRead 中处理）
+    qDebug() << "[EmailSender] 连接建立，等待服务器应答...";
 }
 
+// 核心逻辑：处理从服务器接收到的每一行数据
 void EmailSender::onReadyRead()
 {
     m_responseBuffer += m_socket->readAll();
 
-    // SMTP 响应以 \\r\\n 结尾，多行响应最后一行以空格+数字开头
-    // 简单判断：如果包含换行符，就认为收到了完整响应
+    // 循环处理所有以 \r\n 结尾的完整响应行
     while (m_responseBuffer.contains("\r\n")) {
         int pos = m_responseBuffer.indexOf("\r\n");
         QString line = m_responseBuffer.left(pos);
         m_responseBuffer = m_responseBuffer.mid(pos + 2);
 
-        qDebug() << "[EmailSender] 收到响应:" << line;
+        qDebug() << "[SMTP 响应]:" << line;
 
-        // 获取响应码（前三位）
-        if (line.length() < 3) continue;
+        // 获取 SMTP 响应状态码（前三位数字）
         int respCode = line.left(3).toInt();
+        if (line.length() > 3 && line[3] == '-') continue; // 多行响应处理
 
-        // 如果是多行响应（第4位是 '-'），继续等待
-        if (line.length() > 3 && line[3] == '-') continue;
-
-        // 根据当前状态发送下一命令
+        // 基于当前 m_state 状态决定下一步发送什么
         switch (m_state) {
         case Connecting:
-            // 收到服务器的欢迎消息，发送 EHLO
-            if (respCode == 220) {
-                sendNextCommand();
-            } else {
-                m_lastError = QString("SMTP 连接被拒绝: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+            if (respCode == 220) { // 收到服务器欢迎
+                m_state = EhloSent;
+                sendNextCommand(); // -> 发送 EHLO
+            } else handleError("连接拒绝");
             break;
 
         case EhloSent:
-            if (respCode == 250) {
+            if (respCode == 250) { // EHLO 成功
                 m_state = AuthLoginSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("EHLO 失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送 AUTH LOGIN
+            } else handleError("EHLO 失败");
             break;
 
         case AuthLoginSent:
-            if (respCode == 334) {
+            if (respCode == 334) { // 准备输入用户名
                 m_state = AuthUserSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("AUTH LOGIN 失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送 Base64 用户名
+            } else handleError("AUTH LOGIN 失败");
             break;
 
         case AuthUserSent:
-            if (respCode == 334) {
+            if (respCode == 334) { // 准备输入密码
                 m_state = AuthPassSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("用户名认证失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送 Base64 密码
+            } else handleError("用户名认证失败");
             break;
 
         case AuthPassSent:
-            if (respCode == 235) {
+            if (respCode == 235) { // 认证成功
                 m_state = MailFromSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("密码/授权码认证失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送 MAIL FROM
+            } else handleError("密码错误");
             break;
 
         case MailFromSent:
-            if (respCode == 250) {
+            if (respCode == 250) { // 发件人验证通过
                 m_state = RcptToSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("MAIL FROM 失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送 RCPT TO (收件人)
+            } else handleError("MAIL FROM 失败");
             break;
 
         case RcptToSent:
-            if (respCode == 250) {
+            if (respCode == 250) { // 收件人验证通过
                 m_state = DataSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("RCPT TO 失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送 DATA 命令
+            } else handleError("RCPT TO 失败");
             break;
 
         case DataSent:
-            if (respCode == 354) {
+            if (respCode == 354) { // 服务器已准备好接收邮件内容
                 m_state = DataContentSent;
-                sendNextCommand();
-            } else {
-                m_lastError = QString("DATA 命令失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+                sendNextCommand(); // -> 发送真正的邮件内容
+            } else handleError("DATA 准备失败");
             break;
 
         case DataContentSent:
-            if (respCode == 250) {
+            if (respCode == 250) { // 发送成功
                 m_state = Done;
-                qDebug() << "[EmailSender] 邮件发送成功!";
-                m_timeout->stop();
-                emit emailSent(true, "验证码邮件发送成功");
+                emit emailSent(true, "发送成功");
                 cleanup();
-            } else {
-                m_lastError = QString("邮件内容发送失败: %1").arg(line);
-                emit emailSent(false, m_lastError);
-                cleanup();
-            }
+            } else handleError("内容发送失败");
             break;
-
-        default:
-            break;
+        default: break;
         }
     }
 }
 
-void EmailSender::onErrorOccurred(QAbstractSocket::SocketError error)
-{
-    Q_UNUSED(error);
-    m_lastError = m_socket->errorString();
-    qDebug() << "[EmailSender] Socket 错误:" << m_lastError;
-    m_timeout->stop();
-    emit emailSent(false, QString("网络错误: %1").arg(m_lastError));
-    cleanup();
-}
-
-void EmailSender::onTimeout()
-{
-    m_lastError = "操作超时（30秒）";
-    qDebug() << "[EmailSender] 超时";
-    emit emailSent(false, m_lastError);
-    cleanup();
-}
-
-// ==================== 私有方法 ====================
-
+// 统一发送指令的方法，根据 m_state 决定发送什么字符串
 void EmailSender::sendNextCommand()
 {
     QByteArray cmd;
-
     switch (m_state) {
-    case Connecting:
-        // 等待服务器 220 欢迎消息，什么都不发送
-        break;
-
-    case EhloSent: {
-        // 发送 EHLO
-        QString domain = m_smtpHost.section('.', -2, -1);  // 提取域名后缀
-        cmd = QString("EHLO %1\r\n").arg(domain).toUtf8();
-        break;
+        case EhloSent: cmd = "EHLO localhost\r\n"; break;
+        case AuthLoginSent: cmd = "AUTH LOGIN\r\n"; break;
+        case AuthUserSent: cmd = m_username.toUtf8().toBase64() + "\r\n"; break;
+        case AuthPassSent: cmd = m_password.toUtf8().toBase64() + "\r\n"; break;
+        case MailFromSent: cmd = "MAIL FROM:<" + m_username.toUtf8() + ">\r\n"; break;
+        case RcptToSent: cmd = "RCPT TO:<" + m_toEmail.toUtf8() + ">\r\n"; break;
+        case DataSent: cmd = "DATA\r\n"; break;
+        case DataContentSent: cmd = buildMailContent().toUtf8(); break;
+        default: break;
     }
-
-    case AuthLoginSent: {
-        // 发送 AUTH LOGIN
-        cmd = "AUTH LOGIN\r\n";
-        break;
-    }
-
-    case AuthUserSent: {
-        // 发送 Base64 编码的用户名
-        cmd = m_username.toUtf8().toBase64() + "\r\n";
-        break;
-    }
-
-    case AuthPassSent: {
-        // 发送 Base64 编码的密码/授权码
-        cmd = m_password.toUtf8().toBase64() + "\r\n";
-        break;
-    }
-
-    case MailFromSent: {
-        // MAIL FROM
-        cmd = QString("MAIL FROM:<%1>\r\n").arg(m_username).toUtf8();
-        break;
-    }
-
-    case RcptToSent: {
-        // RCPT TO
-        cmd = QString("RCPT TO:<%1>\r\n").arg(m_toEmail).toUtf8();
-        break;
-    }
-
-    case DataSent: {
-        // DATA
-        cmd = "DATA\r\n";
-        break;
-    }
-
-    case DataContentSent: {
-        // 发送邮件内容
-        QString mailContent = buildMailContent();
-        cmd = mailContent.toUtf8();
-        break;
-    }
-
-    default:
-        break;
-    }
-
-    if (!cmd.isEmpty()) {
-        qDebug() << "[EmailSender] 发送命令:" << cmd.left(64);
-        m_socket->write(cmd);
-        m_socket->flush();
-    }
+    m_socket->write(cmd);
 }
 
-QString EmailSender::buildMailContent() const
-{
-    QString content;
-    content += "From: \"" + m_username.section('@', 0, 0) + "\" <" + m_username + ">\r\n";
-    content += "To: " + m_toEmail + "\r\n";
-    content += "Subject: =?UTF-8?B?" + m_subject.toUtf8().toBase64() + "?=\r\n";
-    content += "MIME-Version: 1.0\r\n";
-    content += "Content-Type: text/plain; charset=UTF-8\r\n";
-    content += "Content-Transfer-Encoding: base64\r\n";
-    content += "Date: " + QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss +0800") + "\r\n";
-    content += "\r\n";
-
-    // 正文用 Base64 编码（支持中文）
-    content += m_body.toUtf8().toBase64() + "\r\n";
-    content += ".\r\n";
-
-    return content;
-}
-
+// 清理函数：发生错误或成功后复位状态
 void EmailSender::cleanup()
 {
     m_state = Idle;
     m_timeout->stop();
-
-    if (m_socket->state() != QAbstractSocket::UnconnectedState) {
-        m_socket->disconnectFromHost();
-    }
+    m_socket->disconnectFromHost();
+}
+// 1. 补齐错误发生的槽函数
+void EmailSender::onErrorOccurred(QAbstractSocket::SocketError error)
+{
+    qDebug() << "[EmailSender] Socket发生错误，错误码:" << error << m_socket->errorString();
+    handleError(QString("网络错误: %1").arg(m_socket->errorString()));
 }
 
-void EmailSender::appendLog(const QString &log)
+// 2. 补齐超时处理的槽函数
+void EmailSender::onTimeout()
 {
-    qDebug() << "[EmailSender]" << log;
+    qDebug() << "[EmailSender] 发送超时，强制断开连接";
+    handleError("发送邮件超时");
+}
+
+// 3. 补齐内部错误处理函数
+void EmailSender::handleError(const QString &errorMsg)
+{
+    emit emailSent(false, errorMsg);
+    cleanup();
+}
+
+// 4. 补齐构建邮件正文的函数（注意末尾的 const 必须严格对应头文件）
+QString EmailSender::buildMailContent() const
+{
+    QString content;
+    content += "From: " + m_username + "\r\n";
+    content += "To: " + m_toEmail + "\r\n";
+    content += "Subject: =?UTF-8?B?" + QString("验证码").toUtf8().toBase64() + "?=\r\n";
+    content += "MIME-Version: 1.0\r\n";
+    content += "Content-Type: text/plain; charset=\"UTF-8\"\r\n";
+    content += "Content-Transfer-Encoding: 8bit\r\n";
+    content += "\r\n"; // 邮件头和邮件体之间必须有一个空行
+    content += m_body + "\r\n";
+    content += ".\r\n"; // SMTP 协议规定，内容以单独的一行 "." 结束
+    return content;
 }

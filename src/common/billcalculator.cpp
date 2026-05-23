@@ -1,158 +1,56 @@
 #include "billcalculator.h"
-#include <QDebug>
-
 BillCalculator::BillCalculator(QObject *parent)
     : QObject(parent)
     , m_userId(0)
 {
 }
-
-void BillCalculator::setCurrentUser(int userId)
-{
-    m_userId = userId;
-}
-
-// ==================== 余额操作（与 BalanceWidget 一致） ====================
-
 bool BillCalculator::recharge(double amount)
 {
-    if (m_userId <= 0) {
-        m_lastError = "请先登录";
-        return false;
-    }
-    if (amount <= 0) {
-        m_lastError = "充值金额必须大于 0";
-        return false;
-    }
-
-    if (!DatabaseManager::instance().updateBalance(m_userId, amount)) {
-        m_lastError = "充值失败";
+    // 只有管理员(role=1)才能操作，假设 m_userId 是当前登录的 ID
+    UserInfo user = DatabaseManager::instance().getUserById(m_userId);
+    if (user.role != 1) {
+        m_lastError = "无权限：仅管理员可操作";
         return false;
     }
 
-    double newBalance = getCurrentBalance();
-    emit balanceChanged(newBalance);
-    emit transactionDone("recharge", amount, newBalance);
-    return true;
+    // 使用头文件已有的接口：addIncome (如果是充值)
+    return DatabaseManager::instance().addIncome(amount, "系统充值");
 }
 
 bool BillCalculator::withdraw(double amount)
 {
-    if (m_userId <= 0) {
-        m_lastError = "请先登录";
-        return false;
-    }
-    if (amount <= 0) {
-        m_lastError = "提现金额必须大于 0";
-        return false;
-    }
+    UserInfo user = DatabaseManager::instance().getUserById(m_userId);
+    if (user.role != 1) return false;
 
-    double current = getCurrentBalance();
-    if (amount > current) {
-        m_lastError = "余额不足，无法提现";
-        return false;
-    }
-
-    if (!DatabaseManager::instance().updateBalance(m_userId, -amount)) {
-        m_lastError = "提现失败";
-        return false;
-    }
-
-    double newBalance = getCurrentBalance();
-    emit balanceChanged(newBalance);
-    emit transactionDone("withdraw", -amount, newBalance);
-    return true;
+    // 使用头文件已有的接口：addExpense
+    return DatabaseManager::instance().addExpense(amount, "提现支出");
 }
 
 double BillCalculator::getCurrentBalance()
 {
-    if (m_userId <= 0) return 0.0;
-    AccountInfo account = DatabaseManager::instance().getAccountByUserId(m_userId);
-    return account.balance;
+    // 头文件定义：AccountInfo getAccount()
+    return DatabaseManager::instance().getAccount().balance;
 }
 
-double BillCalculator::refreshBalance()
-{
-    double balance = getCurrentBalance();
-    emit balanceChanged(balance);
-    return balance;
-}
-
-// ==================== 交易流水 ====================
-
-QList<TransactionInfo> BillCalculator::getTransactionHistory(int limit)
-{
-    if (m_userId <= 0) return {};
-    return DatabaseManager::instance().getTransactionHistory(m_userId, limit);
-}
-
-QList<TransactionInfo> BillCalculator::getTransactions(const QDateTime &start, const QDateTime &end)
-{
-    if (m_userId <= 0) return {};
-    // 通过订单关联获取该用户时间范围内的交易
-    QSqlQuery query(DatabaseManager::instance().getDatabase());
-    query.prepare("SELECT * FROM transactions WHERE userId = ? AND createTime BETWEEN ? AND ? ORDER BY createTime DESC");
-    query.addBindValue(m_userId);
-    query.addBindValue(start);
-    query.addBindValue(end);
-
-    QList<TransactionInfo> list;
-    if (query.exec()) {
-        while (query.next()) {
-            TransactionInfo t;
-            t.id = query.value("id").toInt();
-            t.userId = query.value("userId").toInt();
-            t.type = query.value("type").toString();
-            t.amount = query.value("amount").toDouble();
-            t.balance = query.value("balance").toDouble();
-            t.remark = query.value("remark").toString();
-            t.createTime = query.value("createTime").toDateTime();
-            list.append(t);
-        }
-    }
-    return list;
-}
-
-// ==================== 订单利润计算 ====================
-
+// 订单利润计算（对齐 SalesOrderItemInfo）
 double BillCalculator::calcOrderProfit(int orderId)
 {
-    QList<ContainsInfo> items = DatabaseManager::instance().getOrderItems(orderId);
-    if (items.isEmpty()) {
-        m_lastError = QString("订单 %1 无明细").arg(orderId);
-        return 0.0;
-    }
+    // 头文件定义：QList<SalesOrderItemInfo> getSalesOrderItems(int orderId)
+    QList<SalesOrderItemInfo> items = DatabaseManager::instance().getSalesOrderItems(orderId);
 
     double totalRevenue = 0.0;
     double totalCost = 0.0;
 
-    for (const ContainsInfo &item : items) {
-        ProductInfo product = DatabaseManager::instance().getProductById(item.productId);
+    for (const auto &item : items) {
         totalRevenue += item.subtotal;
+        // 获取商品信息计算成本
+        ProductInfo product = DatabaseManager::instance().getProductById(item.productId);
         totalCost += item.quantity * product.purchasePrice;
     }
-
-    double profit = totalRevenue - totalCost;
-    qDebug() << "[BillCalculator] 订单利润 - 订单ID:" << orderId
-             << "收入:" << totalRevenue
-             << "成本:" << totalCost
-             << "利润:" << profit;
-    return profit;
+    return totalRevenue - totalCost;
 }
 
-// ==================== 统计查询 ====================
-
-double BillCalculator::getTotalSales(const QDateTime &start, const QDateTime &end) const
-{
-    return DatabaseManager::instance().getTotalSales(start, end);
-}
-
-double BillCalculator::getTotalProfit(const QDateTime &start, const QDateTime &end) const
-{
-    return DatabaseManager::instance().getTotalProfit(start, end);
-}
-
-int BillCalculator::getOrderCount(const QDateTime &start, const QDateTime &end) const
-{
-    return DatabaseManager::instance().getOrderCount(start, end);
-}
+// 统计接口：由于 DatabaseManager 里没写这三个函数，暂时返回 0
+double BillCalculator::getTotalSales(const QDateTime&, const QDateTime&) const { return 0.0; }
+double BillCalculator::getTotalProfit(const QDateTime&, const QDateTime&) const { return 0.0; }
+int BillCalculator::getOrderCount(const QDateTime&, const QDateTime&) const { return 0; }

@@ -8,9 +8,9 @@
 bool DatabaseManager::userExists(const QString& username)
 {
     QSqlQuery query(m_db);
-    // 数据库存的是密文，所以查重也要用密文去查
+    QString encryptedUsername = DESutil::encryptWithDefaultKey(username.trimmed());
     query.prepare("SELECT 1 FROM users WHERE username = ?");
-    query.addBindValue(username);
+    query.addBindValue(encryptedUsername);  //
     return query.exec() && query.next();
 }
 
@@ -73,14 +73,20 @@ bool DatabaseManager::registerUser(const QString& username, const QString& email
 {
     if (!isConnected()) return false;
 
+    //  添加加密
+    QString encryptedUsername = DESutil::encryptWithDefaultKey(username.trimmed());
+    QString encryptedEmail = DESutil::encryptWithDefaultKey(email.trimmed());
+    QString encryptedPhone = DESutil::encryptWithDefaultKey(phone.trimmed());
+
     m_db.transaction();
     QSqlQuery query(m_db);
     query.prepare("INSERT INTO users (username, email, phone, password_hash, role) VALUES (?, ?, ?, ?, ?)");
-    query.addBindValue(username);
-    query.addBindValue(email);
-    query.addBindValue(phone);
+    query.addBindValue(encryptedUsername);
+    query.addBindValue(encryptedEmail);
+    query.addBindValue(encryptedPhone);
     query.addBindValue(passwordHash);
     query.addBindValue(role);
+
     if (!query.exec()) {
         m_db.rollback();
         return false;
@@ -215,10 +221,25 @@ bool DatabaseManager::updateLastLogin(int userId)
 
     return query.exec();
 }
-
-// 10. SHA256哈希
-QString DatabaseManager::hashSha256(const QString& input)
+QString DatabaseManager::getEmailByIdAndPhone(int userId, const QString& phone)
 {
-    QByteArray hash = QCryptographicHash::hash(input.toUtf8(), QCryptographicHash::Sha256);
-    return hash.toHex();
+    if (!isConnected()) return QString();
+
+    // 1. 手机号在数据库中是加密存储的，匹配前必须先加密
+    QString encryptedPhone = DESutil::encryptWithDefaultKey(phone.trimmed());
+
+    QSqlQuery query(m_db);
+    // 2. 根据 ID 和加密后的手机号精准查询
+    query.prepare("SELECT email FROM users WHERE id = ? AND phone = ?");
+    query.addBindValue(userId);
+    query.addBindValue(encryptedPhone);
+
+    if (query.exec() && query.next()) {
+        // 3. 取出的 email 也是加密的，需要解密还原
+        QString encryptedEmail = query.value("email").toString();
+        return DESutil::decryptWithDefaultKey(encryptedEmail);
+    }
+
+    // 未找到匹配记录，返回空字符串
+    return QString();
 }

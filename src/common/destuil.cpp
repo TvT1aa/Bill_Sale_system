@@ -67,44 +67,75 @@ uint32 DESutil::roundFunction(uint32 rpt, uint64 subkey) {
 
 // 加密
 QString DESutil::encrypt(const QString& plainText, const QString& key) {
-    uint64 data = stringTo64Bit(plainText);
-    uint64 k = stringTo64Bit(key);
+    QByteArray data = plainText.toUtf8();
 
-    uint64 current = initialPermutation(data); // Step 1
-    uint32 lpt = (current >> 32) & 0xFFFFFFFF;
-    uint32 rpt = current & 0xFFFFFFFF;
+    // 1. PKCS#7 填充：补齐到 8 的倍数
+    int padSize = 8 - (data.size() % 8);
+    data.append(padSize, (char)padSize);
 
+    QByteArray encryptedResult;
+    uint64 k = stringTo64Bit(key); // 原有的 key 转 uint64
     std::vector<uint64> subkeys = generateSubkeys(k);
-    for (int i = 0; i < 16; ++i) { // Step 2: 16 Rounds
-        uint32 nextRpt = lpt ^ roundFunction(rpt, subkeys[i]); // XOR
-        lpt = rpt; // Swap
-        rpt = nextRpt;
+
+    // 2. 分块循环加密
+    for (int i = 0; i < data.size(); i += 8) {
+        uint64 block = bytesTo64(data.mid(i, 8));
+
+        // --- 下面这段是你原本单块加密的核心逻辑 ---
+        uint64 current = initialPermutation(block);
+        uint32 lpt = (current >> 32) & 0xFFFFFFFF;
+        uint32 rpt = current & 0xFFFFFFFF;
+
+        for (int j = 0; j < 16; ++j) {
+            uint32 nextRpt = lpt ^ roundFunction(rpt, subkeys[j]);
+            lpt = rpt;
+            rpt = nextRpt;
+        }
+        uint64 combined = ((uint64)rpt << 32) | lpt;
+        // ----------------------------------------
+
+        encryptedResult.append(u64ToBytes(finalPermutation(combined)));
     }
 
-    uint64 combined = ((uint64)rpt << 32) | lpt; // Step 3
-    return QString::number(finalPermutation(combined), 16).toUpper();
-}
+    // 返回 Hex 字符串，这样数据库存储和跨平台传输最稳定
+    return QString::fromLatin1(encryptedResult.toHex().toUpper());
+}QString DESutil::decrypt(const QString& cipherText, const QString& key) {
+    QByteArray data = QByteArray::fromHex(cipherText.toLatin1());
+    QByteArray decryptedResult;
 
-// 解密
-QString DESutil::decrypt(const QString& cipherText, const QString& key) {
-    uint64 data = cipherText.toULongLong(nullptr, 16);
     uint64 k = stringTo64Bit(key);
-
-    uint64 current = initialPermutation(data);
-    uint32 lpt = (current >> 32) & 0xFFFFFFFF;
-    uint32 rpt = current & 0xFFFFFFFF;
-
     std::vector<uint64> subkeys = generateSubkeys(k);
-    for (int i = 15; i >= 0; --i) { // 解密子密钥逆序
-        uint32 nextRpt = lpt ^ roundFunction(rpt, subkeys[i]);
-        lpt = rpt;
-        rpt = nextRpt;
+
+    // 1. 分块循环解密
+    for (int i = 0; i < data.size(); i += 8) {
+        uint64 block = bytesTo64(data.mid(i, 8));
+
+        // --- 下面这段是你原本单块解密的核心逻辑 ---
+        uint64 current = initialPermutation(block);
+        uint32 lpt = (current >> 32) & 0xFFFFFFFF;
+        uint32 rpt = current & 0xFFFFFFFF;
+
+        for (int j = 15; j >= 0; --j) {
+            uint32 nextRpt = lpt ^ roundFunction(rpt, subkeys[j]);
+            lpt = rpt;
+            rpt = nextRpt;
+        }
+        uint64 combined = ((uint64)rpt << 32) | lpt;
+        // ----------------------------------------
+
+        decryptedResult.append(u64ToBytes(finalPermutation(combined)));
     }
 
-    uint64 combined = ((uint64)rpt << 32) | lpt;
-    return sixtyFourBitToString(finalPermutation(combined));
-}
+    // 2. 去除 PKCS#7 填充
+    if (!decryptedResult.isEmpty()) {
+        int padSize = (uint8_t)decryptedResult.back();
+        if (padSize > 0 && padSize <= 8) {
+            decryptedResult.chop(padSize);
+        }
+    }
 
+    return QString::fromUtf8(decryptedResult);
+}
 // 辅助函数
 uint64 DESutil::stringTo64Bit(const QString& str) {
     QByteArray ba = str.toUtf8().leftJustified(8, '\0');
@@ -133,4 +164,19 @@ QString DESutil::encryptWithDefaultKey(const QString& plainText) {
 QString DESutil::decryptWithDefaultKey(const QString& cipherText) {
     // 这里的逻辑是用默认 Key 调用你的解密函数
     return DESutil::decrypt(cipherText, s_desKey);
+}
+uint64 DESutil::bytesTo64(const QByteArray &ba) {
+    uint64 val = 0;
+    for(int i = 0; i < 8; ++i) {
+        val = (val << 8) | (uint8_t)ba[i];
+    }
+    return val;
+}
+
+QByteArray DESutil::u64ToBytes(uint64 val) {
+    QByteArray ba;
+    for(int i = 7; i >= 0; --i) {
+        ba.append((char)((val >> (i * 8)) & 0xFF));
+    }
+    return ba;
 }

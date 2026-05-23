@@ -17,12 +17,10 @@ public:
 
     signals:
         void closed(); // 窗口关闭信号
-
+        void requestVerificationCode(const QString &account);
+        void resetPasswordRequested(const QString &account, const QString &code,
+                                const QString &newPwd, const QString &confirmPwd);
     // 提交密码重置（账号、验证码、新密码、确认密码）
-    void resetPasswordRequested(const QString &account,
-                                const QString &code,
-                                const QString &newPassword,
-                                const QString &confirmPassword);
 
 public slots:
     // 后端调用：显示错误 / 成功

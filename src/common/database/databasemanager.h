@@ -107,7 +107,8 @@ class DatabaseManager
 public:
     // 单例访问
     static DatabaseManager& instance();
-
+    // 在 class DatabaseManager 的 public: 块中添加：
+    bool updateProductStock(int productId, int quantityChange);
     // 数据库连接
     bool connectToDatabase();
     bool connectToSQLite();
@@ -119,7 +120,8 @@ public:
     UserInfo findUserByAccount(const QString& account);
     UserInfo getUserById(int userId);
     bool userExists(const QString& account);
-
+    // 通过 ID 和 手机号 获取邮箱
+    QString getEmailByIdAndPhone(int userId, const QString& phone);
     // 用户注册
     bool registerUser(const QString& username, const QString& email,
                       const QString& phone, const QString& passwordHash,

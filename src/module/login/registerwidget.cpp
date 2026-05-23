@@ -1,3 +1,8 @@
+/**
+ * @file registerwidget.cpp
+ * @brief 注册窗口实现：负责 UI 展示、输入合法性校验及注册信号发送
+ */
+
 #include "registerwidget.h"
 #include "ui_registerwidget.h"
 #include <QScreen>
@@ -6,23 +11,28 @@
 #include <QGraphicsDropShadowEffect>
 #include <QApplication>
 
+// 构造函数：初始化窗口样式、角色区分及输入框视觉设置
 RegisterWidget::RegisterWidget(int role, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::RegisterWidget)
-    , m_role(role)
+    , m_role(role) // 保存用户角色（0：普通用户，1：管理员）
 {
     ui->setupUi(this);
+    // 设置关闭窗口时自动释放内存，防止内存泄漏
     this->setAttribute(Qt::WA_DeleteOnClose);
 
+    // 设置无边框透明窗口，实现自定义现代 UI
     setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
 
+    // 为卡片添加阴影效果，增强层次感
     QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
     shadow->setBlurRadius(20);
     shadow->setColor(QColor(0, 0, 0, 50));
     shadow->setOffset(0, 5);
     ui->cardWidget->setGraphicsEffect(shadow);
 
+    // 根据角色（role）动态设置标题和按钮颜色
     if (role == 1) {
         ui->label_title->setText("👑 管理员注册");
         ui->btn_RegisterSubmit->setStyleSheet(
@@ -37,6 +47,7 @@ RegisterWidget::RegisterWidget(int role, QWidget *parent)
             );
     }
 
+    // 强制设置输入框文字为黑色，防止被全局深色样式覆盖
     QPalette pal = ui->le_Register_Username->palette();
     pal.setColor(QPalette::Text, Qt::black);
     ui->le_Register_Username->setPalette(pal);
@@ -45,6 +56,7 @@ RegisterWidget::RegisterWidget(int role, QWidget *parent)
     ui->le_Register_Password->setPalette(pal);
     ui->le_Register_ConfirmPwd->setPalette(pal);
 
+    // 连接关闭按钮槽函数
     connect(ui->btn_close, &QPushButton::clicked, this, &RegisterWidget::on_btn_close_clicked);
 }
 
@@ -53,11 +65,13 @@ RegisterWidget::~RegisterWidget()
     delete ui;
 }
 
+// 关闭窗口槽函数
 void RegisterWidget::on_btn_close_clicked()
 {
     this->close();
 }
 
+// 窗口显示事件：确保窗口每次打开都居中于屏幕
 void RegisterWidget::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
@@ -66,11 +80,13 @@ void RegisterWidget::showEvent(QShowEvent *event)
     move(screenGeo.center() - rect().center());
 }
 
+// 鼠标按下事件：通过标题栏区域实现窗口拖动
 void RegisterWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         QPoint pos = event->pos();
         QWidget *child = childAt(pos);
+        // 如果点击标题栏区域，记录初始偏移量
         if (child == ui->label_title || pos.y() < 80) {
             m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
             event->accept();
@@ -78,6 +94,7 @@ void RegisterWidget::mousePressEvent(QMouseEvent *event)
     }
 }
 
+// 鼠标移动事件：根据鼠标偏移量实时移动窗口
 void RegisterWidget::mouseMoveEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton && !m_dragPosition.isNull()) {
@@ -86,60 +103,46 @@ void RegisterWidget::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
+// 供控制器调用的错误提示接口
 void RegisterWidget::showRegisterError(const QString &message)
 {
     QMessageBox::warning(this, "注册失败", message);
 }
 
+// 供控制器调用的成功处理接口
 void RegisterWidget::showRegisterSuccess(const QString &message)
 {
     QMessageBox::information(this, "注册成功", message);
-    emit backToLogin();
+    emit backToLogin();  // 信号：通知登录界面返回操作
     this->close();
 }
 
+// 返回登录按钮点击逻辑
 void RegisterWidget::on_btn_BackToLogin_clicked()
 {
-    emit backToLogin();
+    emit backToLogin();  // 信号：请求返回登录页
     this->close();
 }
 
+// 注册提交：前端数据校验层，确保逻辑层收到的都是合法数据
 void RegisterWidget::on_btn_RegisterSubmit_clicked()
 {
+    // 获取并修剪输入内容
     QString username = ui->le_Register_Username->text().trimmed();
     QString email    = ui->le_Register_Email->text().trimmed();
     QString phone    = ui->le_Register_Phone->text().trimmed();
     QString password = ui->le_Register_Password->text();
     QString confirm  = ui->le_Register_ConfirmPwd->text();
 
-    if (username.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请输入用户名");
-        return;
-    }
-    if (username.length() < 3 || username.length() > 20) {
-        QMessageBox::warning(this, "提示", "用户名长度需在3-20位之间");
-        return;
-    }
-    if (email.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请输入邮箱");
-        return;
-    }
-    if (!email.contains('@') || !email.contains('.')) {
-        QMessageBox::warning(this, "提示", "请输入有效的邮箱地址");
-        return;
-    }
-    if (password.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请输入密码");
-        return;
-    }
-    if (password.length() < 6 || password.length() > 20) {
-        QMessageBox::warning(this, "提示", "密码长度需在6-20位之间");
-        return;
-    }
-    if (password != confirm) {
-        QMessageBox::warning(this, "提示", "两次输入的密码不一致");
-        return;
-    }
+    // 格式化校验逻辑
+    if (username.isEmpty()) { QMessageBox::warning(this, "提示", "请输入用户名"); return; }
+    if (username.length() < 3 || username.length() > 20) { QMessageBox::warning(this, "提示", "用户名长度需在3-20位之间"); return; }
+    if (email.isEmpty()) { QMessageBox::warning(this, "提示", "请输入邮箱"); return; }
+    if (!email.contains('@') || !email.contains('.')) { QMessageBox::warning(this, "提示", "请输入有效的邮箱地址"); return; }
+    if (password.isEmpty()) { QMessageBox::warning(this, "提示", "请输入密码"); return; }
+    if (password.length() < 6 || password.length() > 20) { QMessageBox::warning(this, "提示", "密码长度需在6-20位之间"); return; }
+    if (password != confirm) { QMessageBox::warning(this, "提示", "两次输入的密码不一致"); return; }
 
+    // 核心信号：将所有经过校验的注册数据发射给控制器层
     emit registerSubmitted(username, email, phone, password, confirm, m_role);
 }

@@ -27,6 +27,8 @@ private:
     static QString sixtyFourBitToString(uint64 val);
     //====DES加密密钥====//
     static const QString s_desKey;
+    static QByteArray u64ToBytes(uint64 val);
+    static uint64 bytesTo64(const QByteArray &ba);
 };
 
 #endif

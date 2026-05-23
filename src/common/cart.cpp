@@ -1,4 +1,5 @@
 #include "cart.h"
+#include "databasemanager.h" // 确保能拿到底层的单例接口
 #include <QDebug>
 
 Cart::Cart(QObject *parent)
@@ -14,34 +15,37 @@ void Cart::setCurrentUser(int userId)
     clearCart();
 }
 
-// ==================== 辅助方法（与 CartWidget 一致） ====================
+// ==================== 辅助方法 ====================
 
 double Cart::getProductPrice(int productId)
 {
+    // 对齐：底层返回的是 ProductInfo 结构体
     return DatabaseManager::instance().getProductById(productId).salePrice;
 }
 
 int Cart::getProductStock(int productId)
 {
+    // 对齐：底层返回的是 InventoryInfo 或通过商品ID查库存
     return DatabaseManager::instance().getInventoryByProductId(productId).quantity;
 }
 
 QString Cart::getDefaultAddress()
 {
-    QList<BuyerAddressInfo> addresses = DatabaseManager::instance().getAddressesByUserId(m_userId);
-    for (const BuyerAddressInfo &addr : addresses) {
+    // 🌟【对齐修复 1】：将错误的 BuyerAddressInfo 改为底层统一定义的 AddressInfo
+    QList<AddressInfo> addresses = DatabaseManager::instance().getAddressesByUserId(m_userId);
+    for (const AddressInfo &addr : addresses) {
         if (addr.isDefault) {
             return QString("%1 %2 %3 %4").arg(addr.province, addr.city, addr.district, addr.detail);
         }
     }
     if (!addresses.isEmpty()) {
-        const BuyerAddressInfo &addr = addresses.first();
+        const AddressInfo &addr = addresses.first();
         return QString("%1 %2 %3 %4").arg(addr.province, addr.city, addr.district, addr.detail);
     }
     return "";
 }
 
-// ==================== 购物车操作（与 CartWidget 完全一致） ====================
+// ==================== 购物车操作 ====================
 
 bool Cart::addToCart(int productId, int quantity)
 {
@@ -131,7 +135,7 @@ double Cart::getCartTotal()
     return total;
 }
 
-// ==================== 结算下单（与 CartWidget 完全一致） ====================
+// ==================== 结算下单 ====================
 
 int Cart::checkout()
 {
@@ -141,14 +145,6 @@ int Cart::checkout()
     }
 
     double total = getCartTotal();
-    double balance = DatabaseManager::instance().getAccountByUserId(m_userId).balance;
-
-    if (total > balance) {
-        m_lastError = QString("余额不足！需要 ¥%1，当前余额 ¥%2")
-                          .arg(total, 0, 'f', 2)
-                          .arg(balance, 0, 'f', 2);
-        return -1;
-    }
 
     // 检查所有商品库存
     for (const CartItem &item : m_cartItems) {
@@ -163,29 +159,29 @@ int Cart::checkout()
     // 获取默认地址
     QString address = getDefaultAddress();
 
-    // 创建订单
-    int orderId = DatabaseManager::instance().createSalesOrder(m_userId, address, total, "购物车下单");
-    if (orderId < 0) {
+    // 对接队友的 addSalesOrder 接口
+    int orderId = -1;
+    if (!DatabaseManager::instance().addSalesOrder(m_userId, address, "购物车下单", &orderId)) {
         m_lastError = "创建订单失败";
         return -1;
     }
 
     // 添加订单商品明细并扣减库存
     for (const CartItem &item : m_cartItems) {
-        if (!DatabaseManager::instance().addOrderItem(orderId, item.productId, item.quantity, item.price, item.total)) {
+        // 对接队友的 addSalesOrderItem 接口
+        if (!DatabaseManager::instance().addSalesOrderItem(orderId, item.productId, item.quantity, item.price)) {
             m_lastError = QString("添加订单商品 %1 失败").arg(item.productName);
             return -1;
         }
-        DatabaseManager::instance().updateProductStock(item.productId, item.quantity);
+
+        // 调用库存扣减函数
+        if (!DatabaseManager::instance().updateProductStock(item.productId, item.quantity)) {
+            m_lastError = QString("商品 %1 库存扣减失败").arg(item.productName);
+            return -1;
+        }
     }
 
-    // 扣款
-    if (!DatabaseManager::instance().updateBalance(m_userId, -total)) {
-        m_lastError = "扣款失败";
-        return -1;
-    }
-
-    // 清空购物车
+    // 清空购物车并抛出成功信号
     m_cartItems.clear();
     emit cartChanged();
     emit checkoutSuccess(orderId, total);

@@ -37,7 +37,6 @@ public slots:
     // 用户结算槽
     void onCartItemsLoaded(const QList<QVariantMap>& items, double total);
     void onAddressesLoaded(const QList<QVariantMap>& addresses);
-    void onBalanceLoaded(double balance);
     void onOrderResult(bool success, const QString& message);
     void onAddAddressResult(bool success, const QString& message);
 
@@ -72,7 +71,6 @@ private:
 
     QTableWidget* m_tableWidget;
     QLabel* m_totalLabel;
-    QLabel* m_balanceLabel;
     QComboBox* m_addressCombo;
     QPushButton* m_submitBtn;
     QPushButton* m_addAddressBtn;    // 新增：添加地址按钮
@@ -91,7 +89,6 @@ private:
 
     int m_userId;
     int m_mode;
-    double m_currentBalance;
     double m_currentTotal;
 };
 

@@ -8,7 +8,7 @@
 #include "databasemanager.h"
 
 /**
- * @brief 账单计算器 - 参照 BalanceWidget 的充值/提现/查余额/查流水逻辑
+ * @brief 账单计算器 - 仅供管理员使用
  */
 class BillCalculator : public QObject
 {
@@ -20,54 +20,38 @@ public:
     void setCurrentUser(int userId);
     int userId() const { return m_userId; }
 
-    // ==================== 余额操作（与 BalanceWidget 接口一致） ====================
-
-    /// 充值（内部调 updateBalance）
+    // ==================== 余额操作（限管理员） ====================
     bool recharge(double amount);
-
-    /// 提现（检查余额是否足够）
     bool withdraw(double amount);
-
-    /// 获取当前余额
     double getCurrentBalance();
-
-    /// 刷新余额（返回当前余额）
     double refreshBalance();
 
     // ==================== 交易流水 ====================
-
-    /// 获取交易流水
+    // 使用统一的 TransactionInfo，确保你的 databasemanager.h 中已经定义了此结构体
     QList<TransactionInfo> getTransactionHistory(int limit = 50);
-
-    /// 获取某段时间的交易流水
     QList<TransactionInfo> getTransactions(const QDateTime &start, const QDateTime &end);
 
     // ==================== 订单利润计算 ====================
-
-    /// 计算订单利润（收入 - 成本）
+    // 关键修正：确保这里引用的结构体名与 databasemanager.h 中一致
     double calcOrderProfit(int orderId);
 
     // ==================== 统计查询 ====================
-
-    /// 获取某段时间的总销售额
     double getTotalSales(const QDateTime &start, const QDateTime &end) const;
-
-    /// 获取某段时间的总利润
     double getTotalProfit(const QDateTime &start, const QDateTime &end) const;
-
-    /// 获取某段时间的订单总数
     int getOrderCount(const QDateTime &start, const QDateTime &end) const;
 
-    /// 获取最后错误信息
     QString lastError() const { return m_lastError; }
 
-signals:
-    void balanceChanged(double newBalance);
+    signals:
+        void balanceChanged(double newBalance);
     void transactionDone(const QString &type, double amount, double balance);
 
 private:
     int m_userId = 0;
     QString m_lastError;
+
+    // 内部权限判断辅助
+    bool isAdmin() const { return m_userId == 1; }
 };
 
 #endif // BILLCALCULATOR_H

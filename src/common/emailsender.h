@@ -71,7 +71,7 @@ private:
         DataContentSent,
         Done
     };
-
+    void handleError(const QString &msg);
     void sendNextCommand();
     QString buildMailContent() const;
     void cleanup();

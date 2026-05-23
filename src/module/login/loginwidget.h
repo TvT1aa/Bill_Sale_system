@@ -45,13 +45,13 @@ signals:
                                 const QString &code,
                                 const QString &newPassword,
                                 const QString &confirmPassword);
-
+    void requestVerificationCode(const QString &account);
 private slots:
     void on_btn_forgetPwd_clicked();
     void on_btn_register_clicked();
     void on_btn_registerAdmin_clicked();
     void on_btnLogin_clicked();
-    void on_btn_close_clicked();  // 添加关闭按钮槽函数
+    void on_btn_close_clicked();
 
 private:
     Ui::LoginWidget *ui;
