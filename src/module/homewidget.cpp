@@ -5,9 +5,14 @@
 #include "balance/balancewidget.h"
 #include "deduct/deductwidget.h"
 #include "report/reportwidget.h"
+#include "purchase/purchasewidget.h"
 #include "cart_in/cart_controllor.h"
 #include "address/address_controllor.h"
 #include "deduct/deduct_controllor.h"
+#include "inventory/inventory_controllor.h"
+#include "purchase/purchase_controllor.h"
+#include "balance/balance_controllor.h"
+#include "report/report_controllor.h"
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QFrame>
@@ -23,6 +28,7 @@ HomeWidget::HomeWidget(int userId, const QString& username, int role, QWidget *p
     , m_balanceWidget(nullptr)
     , m_deductWidget(nullptr)
     , m_reportWidget(nullptr)
+    , m_purchaseWidget(nullptr)
 {
     setupUI(role);
 }
@@ -114,7 +120,7 @@ void HomeWidget::setupAdminMenu()
 {
     QList<QPair<QString, QString>> menus = {
         {"📦 库存管理", "inventory"},
-        {"📦 进货管理", "cart"},
+        {"📦 进货管理", "purchase"},
         {"📤 出库管理", "deduct"},
         {"💰 库存余额", "balance"},
         {"📋 报表", "report"}
@@ -157,8 +163,8 @@ void HomeWidget::createAdminPages()
     m_inventoryWidget = new InventoryWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_inventoryWidget);
 
-    m_cartWidget = new CartWidget(m_userId, 1, this);
-    m_stackedWidget->addWidget(m_cartWidget);
+    m_purchaseWidget = new PurchaseWidget(m_userId, this);
+    m_stackedWidget->addWidget(m_purchaseWidget);
 
     m_deductWidget = new DeductWidget(m_userId, 1, this);
     m_stackedWidget->addWidget(m_deductWidget);
@@ -168,6 +174,18 @@ void HomeWidget::createAdminPages()
 
     m_reportWidget = new ReportWidget(m_userId, this);
     m_stackedWidget->addWidget(m_reportWidget);
+
+    // 创建控制器并连接信号
+    InventoryControllor* inventoryCtrl = new InventoryControllor(this);
+    inventoryCtrl->bindWithView(m_inventoryWidget);
+
+    new purchase_controllor(m_userId, m_purchaseWidget, this);
+    new deduct_controllor(m_userId, 1, m_deductWidget, this);
+    new balance_controllor(m_userId, m_balanceWidget, this);
+    new report_controllor(m_userId, m_reportWidget, this);
+
+    // 初始加载数据
+    emit m_inventoryWidget->refreshRequested();
 }
 
 void HomeWidget::onMenuClicked(int row)
@@ -190,6 +208,8 @@ void HomeWidget::refreshCurrentPage()
         emit m_inventoryWidget->refreshRequested();
     } else if (currentWidget == m_cartWidget && m_cartWidget) {
         emit m_cartWidget->refreshRequested();
+    } else if (currentWidget == m_purchaseWidget && m_purchaseWidget) {
+        emit m_purchaseWidget->refreshRequested();
     } else if (m_role == 0 && currentWidget == m_addressWidget && m_addressWidget) {
         emit m_addressWidget->refreshRequested();
     } else if (m_role == 1 && currentWidget == m_balanceWidget && m_balanceWidget) {

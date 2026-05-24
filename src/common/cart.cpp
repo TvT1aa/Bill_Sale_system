@@ -167,7 +167,7 @@ int Cart::checkout(const QString& address)
 
     // 对接队友的 addSalesOrder 接口
     int orderId = -1;
-    if (!DatabaseManager::instance().addSalesOrder(m_userId, finalAddress, "购物车下单", &orderId)) {
+    if (!DatabaseManager::instance().addSalesOrder(m_userId, finalAddress, "购物车下单", &orderId, total)) {
         m_lastError = "创建订单失败";
         return -1;
     }
@@ -180,6 +180,9 @@ int Cart::checkout(const QString& address)
             return -1;
         }
     }
+
+    // 自动增加卖家余额（收入）
+    DatabaseManager::instance().addIncome(total, QString("用户下单，订单ID: %1").arg(orderId));
 
     // 清空购物车并抛出成功信号
     m_cartItems.clear();

@@ -48,7 +48,6 @@ private:
     void setupUI(int role);
     void setupUserUI();
     void setupAdminUI();
-    void loadSampleData();
 
     QTableWidget* m_tableWidget;
     QLineEdit* m_searchEdit;

@@ -1,55 +1,170 @@
-//
-// Created by ASUS on 2026/5/15.
-//
-
 #include "databasemanager.h"
 #include "inventory_controllor.h"
 #include <QDebug>
+
 InventoryControllor::InventoryControllor(QObject *parent)
     : QObject(parent)
-    , m_view(nullptr) // 初始化视图指针为空，防止野指针
+    , m_view(nullptr)
 {
 }
+
 InventoryControllor::~InventoryControllor()
 {
 }
+
+static QList<QVariantMap> getProductsWithStock()
+{
+    QList<QVariantMap> products;
+    for (const ProductInfo &p : DatabaseManager::instance().getProductsByName("")) {
+        QVariantMap m;
+        m["id"] = p.id;
+        m["name"] = p.name;
+        m["category"] = p.category;
+        m["purchasePrice"] = p.purchasePrice;
+        m["salePrice"] = p.salePrice;
+        m["unit"] = p.unit;
+        m["remark"] = p.remark;
+        m["quantity"] = DatabaseManager::instance().getInventoryByProductId(p.id).quantity;
+        products.append(m);
+    }
+    return products;
+}
+
 void InventoryControllor::bindWithView(InventoryWidget* view) {
     m_view = view;
-    // ---- 建立信号与槽的连接 (双向奔赴) ----
 
-    // 监听视图的“刷新”请求 -> 触发控制器的“处理刷新”业务
+    // 刷新
     connect(m_view, &InventoryWidget::refreshRequested,
             this, &InventoryControllor::handleRefresh);
 
-    // 监听视图的“搜索”请求 -> 触发控制器的“处理搜索”业务
+    // 搜索
     connect(m_view, &InventoryWidget::searchRequested,
             this, &InventoryControllor::handleSearch);
 
-    // 监听视图的“添加商品”请求 -> 触发控制器的“处理添加”业务
+    // 添加商品
     connect(m_view, &InventoryWidget::addProductRequested,
             this, &InventoryControllor::handleAddProduct);
 
-    // 监听视图的“修改商品”请求 -> 触发控制器的“处理更新”业务
+    // 修改商品
     connect(m_view, &InventoryWidget::updateProductRequested,
             this, &InventoryControllor::handleUpdateProduct);
 
-    // 监听视图的“删除商品”请求 -> 触发控制器的“处理删除”业务
+    // 删除商品
     connect(m_view, &InventoryWidget::deleteProductRequested,
             this, &InventoryControllor::handleDeleteProduct);
 
-    // 监听视图的“注册管理员”请求 -> 触发控制器的“身份提权”业务
-    // 考虑到界面上信号参数可能跟槽不同，这里直接用 Lambda 表达式进行安全对接
+    // 注册管理员
     connect(m_view, &InventoryWidget::adminRegisterRequested, this, [this](const QString& code) {
-        // 传入激活码，并默认传入当前用户的ID（这里暂定为1，实际可从全局用户管理中获取）
         this->handleAdminRegister(code, 1);
     });
 }
-void handleRefresh() {
 
+void InventoryControllor::handleRefresh()
+{
+    m_view->onInventoryLoaded(getProductsWithStock());
 }
-void InventoryControllor::handleRefresh() {}
-void InventoryControllor::handleSearch(const QString&) {}
-void InventoryControllor::handleAddProduct(const QMap<QString, QVariant>&) {}
-void InventoryControllor::handleUpdateProduct(int, const QMap<QString, QVariant>&) {}
-void InventoryControllor::handleDeleteProduct(int) {}
-void InventoryControllor::handleAdminRegister(const QString&, int) {}
+
+void InventoryControllor::handleSearch(const QString& keyword)
+{
+    QList<QVariantMap> results;
+    for (const ProductInfo &p : DatabaseManager::instance().getProductsByName(keyword)) {
+        QVariantMap m;
+        m["id"] = p.id;
+        m["name"] = p.name;
+        m["category"] = p.category;
+        m["purchasePrice"] = p.purchasePrice;
+        m["salePrice"] = p.salePrice;
+        m["unit"] = p.unit;
+        m["remark"] = p.remark;
+        m["quantity"] = DatabaseManager::instance().getInventoryByProductId(p.id).quantity;
+        results.append(m);
+    }
+    m_view->onSearchResult(results);
+}
+
+void InventoryControllor::handleAddProduct(const QVariantMap& productData)
+{
+    QString name = productData["name"].toString();
+    QString category = productData["category"].toString();
+    double salePrice = productData["salePrice"].toDouble();
+    int quantity = productData["quantity"].toInt();
+    QString unit = productData["unit"].toString();
+
+    int productId = -1;
+    bool ok = DatabaseManager::instance().addProduct(name, category, 0, salePrice, unit, "", &productId);
+    if (!ok) {
+        m_view->onOperationError("添加商品失败");
+        return;
+    }
+
+    // 添加库存
+    if (quantity > 0) {
+        DatabaseManager::instance().addInventory(productId, quantity);
+    }
+
+    m_view->onOperationSuccess(QString("添加商品成功: %1").arg(name));
+    handleRefresh();
+}
+
+void InventoryControllor::handleUpdateProduct(int id, const QVariantMap& productData)
+{
+    ProductInfo product = DatabaseManager::instance().getProductById(id);
+    if (product.id < 0) {
+        m_view->onOperationError("未找到该商品");
+        return;
+    }
+
+    QString name = productData["name"].toString();
+    QString category = productData["category"].toString();
+    double salePrice = productData["salePrice"].toDouble();
+    int quantity = productData["quantity"].toInt();
+    QString unit = productData["unit"].toString();
+
+    bool ok = DatabaseManager::instance().updateProduct(id, name, category,
+                                                         product.purchasePrice, salePrice,
+                                                         unit, product.remark);
+    if (!ok) {
+        m_view->onOperationError("修改商品失败");
+        return;
+    }
+
+    // 更新库存
+    InventoryInfo inv = DatabaseManager::instance().getInventoryByProductId(id);
+    if (inv.id > 0) {
+        DatabaseManager::instance().updateQuantity(inv.id, quantity);
+    } else {
+        DatabaseManager::instance().addInventory(id, quantity);
+    }
+
+    m_view->onOperationSuccess(QString("修改商品成功: %1").arg(name));
+    handleRefresh();
+}
+
+void InventoryControllor::handleDeleteProduct(int id)
+{
+    ProductInfo product = DatabaseManager::instance().getProductById(id);
+    if (product.id < 0) {
+        m_view->onOperationError("未找到该商品");
+        return;
+    }
+
+    bool ok = DatabaseManager::instance().deleteProduct(id);
+    if (!ok) {
+        m_view->onOperationError("删除商品失败");
+        return;
+    }
+
+    m_view->onOperationSuccess(QString("删除商品成功: %1").arg(product.name));
+    handleRefresh();
+}
+
+void InventoryControllor::handleAdminRegister(const QString& verifyCode, int userId)
+{
+    Q_UNUSED(userId);
+    // 管理员验证码：简单实现，验证码为 "admin888"
+    if (verifyCode == "admin888") {
+        m_view->onAdminRegisterResult(true, "注册管理员成功");
+    } else {
+        m_view->onAdminRegisterResult(false, "验证码错误");
+    }
+}

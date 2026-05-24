@@ -18,7 +18,6 @@ CartWidget::CartWidget(int userId, int role, QWidget *parent)
     , m_role(role)
 {
     setupUI(role);
-    loadSampleProducts();
 }
 
 CartWidget::~CartWidget()
@@ -173,67 +172,6 @@ void CartWidget::setupAdminUI()
     connect(m_searchBtn, &QPushButton::clicked, this, &CartWidget::onSearchProduct);
     connect(m_refreshBtn, &QPushButton::clicked, this, &CartWidget::onRefreshClicked);
     connect(m_addToPurchaseBtn, &QPushButton::clicked, this, &CartWidget::onAddToPurchase);
-}
-
-void CartWidget::loadSampleProducts()
-{
-    QList<QVariantMap> sampleProducts;
-
-    QVariantMap p1;
-    p1["id"] = 1;
-    p1["name"] = "华为 Mate 60 Pro";
-    p1["category"] = "手机";
-    p1["salePrice"] = 6999.00;
-    p1["quantity"] = 50;
-    p1["unit"] = "台";
-    sampleProducts.append(p1);
-
-    QVariantMap p2;
-    p2["id"] = 2;
-    p2["name"] = "iPhone 15 Pro";
-    p2["category"] = "手机";
-    p2["salePrice"] = 7999.00;
-    p2["quantity"] = 30;
-    p2["unit"] = "台";
-    sampleProducts.append(p2);
-
-    QVariantMap p3;
-    p3["id"] = 3;
-    p3["name"] = "联想 ThinkPad X1";
-    p3["category"] = "电脑";
-    p3["salePrice"] = 8999.00;
-    p3["quantity"] = 20;
-    p3["unit"] = "台";
-    sampleProducts.append(p3);
-
-    QVariantMap p4;
-    p4["id"] = 4;
-    p4["name"] = "罗技 MX Master 3S";
-    p4["category"] = "鼠标";
-    p4["salePrice"] = 599.00;
-    p4["quantity"] = 100;
-    p4["unit"] = "个";
-    sampleProducts.append(p4);
-
-    QVariantMap p5;
-    p5["id"] = 5;
-    p5["name"] = "机械键盘 K845";
-    p5["category"] = "键盘";
-    p5["salePrice"] = 399.00;
-    p5["quantity"] = 80;
-    p5["unit"] = "个";
-    sampleProducts.append(p5);
-
-    QVariantMap p6;
-    p6["id"] = 6;
-    p6["name"] = "小米手环 8";
-    p6["category"] = "穿戴";
-    p6["salePrice"] = 249.00;
-    p6["quantity"] = 200;
-    p6["unit"] = "个";
-    sampleProducts.append(p6);
-
-    onProductsLoaded(sampleProducts);
 }
 
 void CartWidget::onSearchProduct()

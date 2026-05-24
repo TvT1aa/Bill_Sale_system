@@ -198,7 +198,7 @@ public:
     QList<SalesOrderInfo> getSalesOrdersByUserId(int userId);
     QList<SalesOrderInfo> getAllSalesOrders();
     // 添加销售订单
-    bool addSalesOrder(int userId, const QString& address, const QString& remark, int* outOrderId = nullptr);
+    bool addSalesOrder(int userId, const QString& address, const QString& remark, int* outOrderId = nullptr, double totalAmount = 0);
     // 删除销售订单
     bool deleteSalesOrder(int orderId);
 
