@@ -13,6 +13,7 @@ class AddressWidget;
 class BalanceWidget;
 class DeductWidget;
 class ReportWidget;
+class PurchaseWidget;
 
 class HomeWidget : public QWidget
 {
@@ -53,6 +54,7 @@ private:
     BalanceWidget* m_balanceWidget;
     DeductWidget* m_deductWidget;
     ReportWidget* m_reportWidget;
+    PurchaseWidget* m_purchaseWidget;
 };
 
 #endif // HOMEWIDGET_H

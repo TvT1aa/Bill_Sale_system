@@ -124,7 +124,15 @@ set(PROJECT_SOURCES
         src/module/inventory/inventorywidget.h
         src/module/inventory/inventorywidget.ui
 
+        # ── Purchase 进货管理模块 ──
+        src/module/purchase/purchase_controllor.cpp
+        src/module/purchase/purchase_controllor.h
+        src/module/purchase/purchasewidget.cpp
+        src/module/purchase/purchasewidget.h
+
         # ── Report 进销存数据报表模块 ──
+        src/module/report/report_controllor.cpp
+        src/module/report/report_controllor.h
         src/module/report/reportwidget.cpp
         src/module/report/reportwidget.h
         src/module/report/reportwidget.ui
@@ -165,6 +173,7 @@ target_include_directories(BillandSale_system PRIVATE
         src/module/cart_in
         src/module/deduct
         src/module/inventory
+        src/module/purchase
         src/module/report
         ${CMAKE_CURRENT_BINARY_DIR} # 存放自动化 MOC/UIC 影子文件的老巢，绝对不能漏
 )

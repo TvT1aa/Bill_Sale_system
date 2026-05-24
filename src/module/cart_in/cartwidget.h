@@ -52,7 +52,6 @@ private:
     void setupUI(int role);
     void setupUserUI();
     void setupAdminUI();
-    void loadSampleProducts();
 
     QTableWidget* m_tableWidget;       // 商品列表/进货单表格
     QTableWidget* m_cartTable;        // 购物车商品表格

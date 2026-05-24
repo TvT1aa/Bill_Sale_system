@@ -16,7 +16,6 @@ InventoryWidget::InventoryWidget(int userId, int role, QWidget *parent)
     , m_role(role)
 {
     setupUI(role);
-    loadSampleData();
 }
 
 InventoryWidget::~InventoryWidget()
@@ -97,22 +96,6 @@ void InventoryWidget::setupUI(int role)
 
     // 初始化时请求数据
     emit refreshRequested();
-}
-
-void InventoryWidget::loadSampleData()
-{
-    QList<QVariantMap> sampleData;
-    for (int i = 1; i <= 5; i++) {
-        QVariantMap product;
-        product["id"] = i;
-        product["name"] = QString("商品%1").arg(i);
-        product["category"] = i % 2 == 0 ? "电子产品" : "日用品";
-        product["salePrice"] = 99.0 * i;
-        product["quantity"] = i * 10;
-        product["unit"] = "件";
-        sampleData.append(product);
-    }
-    onInventoryLoaded(sampleData);
 }
 
 void InventoryWidget::onSearchClicked()

@@ -125,32 +125,6 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);  -- 类型索引
--- ==================== 测试种子数据 ====================
 
--- 用户：admin(密码 admin123) + 测试用户(密码 123456)
-INSERT OR IGNORE INTO users (id, username, email, phone, password_hash, role) VALUES
-(1, 'admin', 'admin@test.com', '13800000000', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 1),
-(2, '测试用户', 'user@test.com', '13900000001', '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5', 0);
-
--- 账户
-INSERT OR IGNORE INTO accounts (id, name, balance) VALUES (1, '主账户', 100000.00);
-
--- 商品
-INSERT OR IGNORE INTO products (id, name, category, purchase_price, sale_price, unit, remark) VALUES
-(1, 'iPhone 15', '电子产品', 5000.00, 7999.00, '台', '苹果手机'),
-(2, 'MacBook Pro', '电子产品', 10000.00, 14999.00, '台', '苹果笔记本'),
-(3, '机械键盘', '外设', 200.00, 499.00, '个', '青轴机械键盘'),
-(4, '无线鼠标', '外设', 50.00, 129.00, '个', '蓝牙5.0'),
-(5, '显示器 27寸', '电子产品', 1500.00, 2499.00, '台', '4K IPS屏');
-
--- 库存
-INSERT OR IGNORE INTO inventory (id, product_id, quantity, warehouse_address) VALUES
-(1, 1, 50, '主仓库A区'),
-(2, 2, 30, '主仓库A区'),
-(3, 3, 100, '主仓库B区'),
-(4, 4, 200, '主仓库B区'),
-(5, 5, 20, '主仓库A区');
-
--- 测试用户地址
-INSERT OR IGNORE INTO buyer_addresses (id, user_id, name, phone, province, city, district, detail, is_default) VALUES
-(1, 2, '张三', '13900000001', '广东省', '深圳市', '南山区', '科技园南区A栋1001', 1);
+-- 初始账户数据（如果不存在则插入）
+INSERT OR IGNORE INTO accounts (id, name, balance) VALUES (1, '主账户', 10000);

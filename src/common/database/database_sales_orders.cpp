@@ -70,15 +70,16 @@ QList<SalesOrderInfo> DatabaseManager::getAllSalesOrders()
 }
 
 // 4. 添加销售订单
-bool DatabaseManager::addSalesOrder(int userId, const QString& address, const QString& remark, int* outOrderId)
+bool DatabaseManager::addSalesOrder(int userId, const QString& address, const QString& remark, int* outOrderId, double totalAmount)
 {
     if (!isConnected()) return false;
 
     m_db.transaction();
     QSqlQuery query(m_db);
-    query.prepare("INSERT INTO sales_orders (user_id, address, remark) VALUES (?, ?, ?)");
+    query.prepare("INSERT INTO sales_orders (user_id, address, total_amount, remark) VALUES (?, ?, ?, ?)");
     query.addBindValue(userId);
     query.addBindValue(address);
+    query.addBindValue(totalAmount);
     query.addBindValue(remark);
 
     if (!query.exec()) {

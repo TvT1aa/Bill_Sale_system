@@ -137,14 +137,48 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
             DatabaseManager::instance().updateProductStock(productId, quantity);
             ProductInfo p = DatabaseManager::instance().getProductById(productId);
 
+            double amount = quantity * p.salePrice;
             int orderId = -1;
             if (DatabaseManager::instance().addSalesOrder(0, "手动出库",
-                    QString("出库: %1 x%2, %3").arg(p.name).arg(quantity).arg(reason), &orderId)) {
+                    QString("出库: %1 x%2, %3").arg(p.name).arg(quantity).arg(reason), &orderId, amount)) {
                 DatabaseManager::instance().addSalesOrderItem(orderId, productId, quantity, p.salePrice);
+
+                // 自动增加卖家余额（收入）
+                DatabaseManager::instance().addIncome(amount, QString("手动出库，订单ID: %1").arg(orderId));
+
                 m_view->onOperationSuccess(QString("出库成功，订单ID: %1").arg(orderId));
             } else {
                 m_view->onOperationError("出库失败");
             }
+        });
+
+        // 查看订单详情
+        connect(m_view, &DeductWidget::viewOrderDetailRequested, this, [this](int orderId) {
+            SalesOrderInfo order = DatabaseManager::instance().getSalesOrderById(orderId);
+            if (order.id < 0) {
+                m_view->onOperationError("未找到该订单");
+                return;
+            }
+
+            QVariantMap detail;
+            detail["id"] = order.id;
+            detail["userId"] = order.userId;
+            detail["address"] = order.address;
+            detail["totalAmount"] = order.totalAmount;
+            detail["remark"] = order.remark;
+            detail["createdAt"] = order.createdAt;
+
+            UserInfo user = DatabaseManager::instance().getUserById(order.userId);
+            detail["username"] = user.username;
+
+            m_view->onOrderDetailLoaded(detail);
+        });
+
+        // 更新订单状态（数据库暂无此功能，提示用户）
+        connect(m_view, &DeductWidget::updateOrderStatusRequested, this, [this](int orderId, int status) {
+            Q_UNUSED(orderId);
+            Q_UNUSED(status);
+            m_view->onOperationError("订单状态更新功能暂未实现");
         });
     }
 }

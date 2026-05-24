@@ -29,14 +29,14 @@ balance_controllor::balance_controllor(int userId, BalanceWidget *widget, QObjec
     });
 
     connect(m_view, &BalanceWidget::adjustBalanceRequested, this, [this](double amount, const QString &remark) {
-        AccountInfo account = DatabaseManager::instance().getAccount();
-        double newBalance = account.balance + amount;
-        bool ok = DatabaseManager::instance().updateBalance(newBalance);
+        bool ok = false;
+        if (amount > 0) {
+            ok = DatabaseManager::instance().addIncome(amount, remark);
+        } else {
+            ok = DatabaseManager::instance().addExpense(-amount, remark);
+        }
+
         if (ok) {
-            if (amount > 0)
-                DatabaseManager::instance().addIncome(amount, remark);
-            else
-                DatabaseManager::instance().addExpense(-amount, remark);
             m_view->onOperationSuccess("余额已调整");
             AccountInfo updated = DatabaseManager::instance().getAccount();
             m_view->onBalanceLoaded(updated.balance, updated.name);
