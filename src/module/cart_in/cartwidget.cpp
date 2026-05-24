@@ -19,7 +19,6 @@ CartWidget::CartWidget(int userId, int role, QWidget *parent)
 {
     setupUI(role);
     loadSampleProducts();
-    emit refreshRequested();
 }
 
 CartWidget::~CartWidget()
@@ -99,6 +98,21 @@ void CartWidget::setupUserUI()
     m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_tableWidget->setAlternatingRowColors(true);
     m_tableWidget->setFixedHeight(250);
+
+    // 购物车商品表格
+    QLabel* cartTitle = new QLabel("我的购物车", this);
+    cartTitle->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; color: #303133; margin-top: 5px; }");
+    mainLayout->addWidget(cartTitle);
+
+    m_cartTable = new QTableWidget(this);
+    m_cartTable->setColumnCount(5);
+    QStringList cartHeaders = {"商品ID", "商品名称", "单价", "数量", "小计"};
+    m_cartTable->setHorizontalHeaderLabels(cartHeaders);
+    m_cartTable->horizontalHeader()->setStretchLastSection(true);
+    m_cartTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_cartTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_cartTable->setAlternatingRowColors(true);
+    m_cartTable->setFixedHeight(150);
 
     connect(m_searchBtn, &QPushButton::clicked, this, &CartWidget::onSearchProduct);
     connect(m_refreshBtn, &QPushButton::clicked, this, &CartWidget::onRefreshClicked);
@@ -225,21 +239,12 @@ void CartWidget::loadSampleProducts()
 void CartWidget::onSearchProduct()
 {
     QString keyword = m_searchEdit->text().trimmed();
-    if (keyword.isEmpty()) {
-        loadSampleProducts();
-    } else {
-        loadSampleProducts();
-    }
+    emit searchProductRequested(keyword);
 }
 
 void CartWidget::onRefreshClicked()
 {
-    if (m_role == 0) {
-        loadSampleProducts();
-        emit refreshRequested();
-    } else {
-        emit refreshRequested();
-    }
+    emit refreshRequested();
 }
 
 void CartWidget::onAddToCart()
@@ -262,7 +267,6 @@ void CartWidget::onAddToCart()
                                         1, 1, stock, 1, &ok);
     if (ok && quantity > 0) {
         emit addToCartRequested(productId, quantity);
-        QMessageBox::information(this, "提示", QString("已添加 %1 x%2 到购物车").arg(productName).arg(quantity));
     }
 }
 
@@ -323,8 +327,23 @@ void CartWidget::onSubmitPurchase()
 
 void CartWidget::onCartLoaded(const QList<QVariantMap>& cartItems)
 {
-    // 购物车表格已在其他地方处理
-    Q_UNUSED(cartItems)
+    // 填充购物车商品表格
+    if (!m_cartTable) return;
+
+    m_cartTable->setRowCount(cartItems.size());
+    double total = 0;
+    for (int i = 0; i < cartItems.size(); i++) {
+        const QVariantMap& item = cartItems[i];
+        double subtotal = item["quantity"].toInt() * item["price"].toDouble();
+        total += subtotal;
+
+        m_cartTable->setItem(i, 0, new QTableWidgetItem(QString::number(item["productId"].toInt())));
+        m_cartTable->setItem(i, 1, new QTableWidgetItem(item["productName"].toString()));
+        m_cartTable->setItem(i, 2, new QTableWidgetItem(QString("¥%1").arg(item["price"].toDouble(), 0, 'f', 2)));
+        m_cartTable->setItem(i, 3, new QTableWidgetItem(QString::number(item["quantity"].toInt())));
+        m_cartTable->setItem(i, 4, new QTableWidgetItem(QString("¥%1").arg(subtotal, 0, 'f', 2)));
+    }
+    m_totalLabel->setText(QString("购物车总计: ¥%1").arg(total, 0, 'f', 2));
 }
 
 void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
@@ -352,7 +371,6 @@ void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
                                            1, 1, stock, 1, &ok);
             if (ok && qty > 0) {
                 emit addToCartRequested(productId, qty);
-                QMessageBox::information(this, "提示", QString("已添加 %1 x%2 到购物车").arg(name).arg(qty));
             }
         });
         m_tableWidget->setCellWidget(i, 4, addBtn);
@@ -390,10 +408,10 @@ void CartWidget::onPurchaseLoaded(const QList<QVariantMap>& purchaseItems)
 void CartWidget::onCheckoutResult(bool success, const QString& message)
 {
     if (success) {
-        QMessageBox::information(this, "结算成功", message);
+        QMessageBox::information(this, "提示", message);
         emit refreshRequested();
     } else {
-        QMessageBox::warning(this, "结算失败", message);
+        QMessageBox::warning(this, "错误", message);
     }
 }
 

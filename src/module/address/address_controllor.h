@@ -1,13 +1,23 @@
-//
-// Created by ASUS on 2026/5/15.
-//
+#ifndef ADDRESS_CONTROLLOR_H
+#define ADDRESS_CONTROLLOR_H
 
-#ifndef BILLANDSALE_SYSTEM_ADDRESS_CONTROLLOR_H
-#define BILLANDSALE_SYSTEM_ADDRESS_CONTROLLOR_H
+#include <QObject>
+#include <QList>
+#include <QVariantMap>
+#include "databasemanager.h"
 
+class AddressWidget;
 
-class address_controllor {
+class address_controllor : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit address_controllor(int userId, AddressWidget *widget, QObject *parent = nullptr);
+
+private:
+    int m_userId;
+    AddressWidget *m_view;
 };
 
-
-#endif //BILLANDSALE_SYSTEM_ADDRESS_CONTROLLOR_H
+#endif // ADDRESS_CONTROLLOR_H
