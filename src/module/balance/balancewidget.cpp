@@ -1,4 +1,4 @@
-#include "balancewidget.h"
+﻿#include "balancewidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -101,11 +101,34 @@ void BalanceWidget::setupUI()
 
 void BalanceWidget::onAdjustBalance()
 {
-    double amount = m_adjustAmountEdit->text().toDouble();
-    if (amount == 0) {
+    bool ok = false;
+    double amount = m_adjustAmountEdit->text().toDouble(&ok);
+    if (!ok || amount == 0) {
         QMessageBox::warning(this, "提示", "请输入有效的调整金额（非零）");
         return;
     }
+
+    // 限制最多两位小数
+    QString amountText = m_adjustAmountEdit->text().trimmed();
+    int dotPos = amountText.indexOf('.');
+    if (dotPos >= 0 && amountText.length() - dotPos - 1 > 2) {
+        QMessageBox::warning(this, "提示", "金额最多保留两位小数");
+        return;
+    }
+
+    // 单次调整上限
+    const double MAX_AMOUNT = 999999.99;
+    if (qAbs(amount) > MAX_AMOUNT) {
+        QMessageBox::warning(this, "提示", QString("单次调整金额不能超过 ¥%1").arg(MAX_AMOUNT, 0, 'f', 2));
+        return;
+    }
+
+    // 扣减时不能低于0
+    if (amount < 0 && m_currentBalance + amount < 0) {
+        QMessageBox::warning(this, "提示", "余额不足，扣减后余额不能低于 ¥0.00");
+        return;
+    }
+
     QString remark = m_adjustRemarkEdit->text().trimmed();
     if (remark.isEmpty()) {
         remark = "管理员手动调整";
@@ -127,6 +150,7 @@ void BalanceWidget::onRefreshClicked()
 
 void BalanceWidget::onBalanceLoaded(double balance, const QString& accountName)
 {
+    m_currentBalance = balance;
     m_accountNameLabel->setText(QString("账户：%1").arg(accountName));
     m_balanceLabel->setText(QString("¥%1").arg(balance, 0, 'f', 2));
 }

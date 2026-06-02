@@ -4,7 +4,7 @@
 #include <utility>
 
 // 直接在定义处初始化，避免权限问题和初始化时机问题
-QRegularExpression User::s_usernameRegex("^[a-zA-Z0-9_\\x{4e00}-\\x{9fa5}]+$");
+QRegularExpression User::s_usernameRegex("^[a-zA-Z0-9]+$");
 QRegularExpression User::s_emailRegex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
 QRegularExpression User::s_phoneRegex(R"(^1[3-9]\d{9}$)");
 
@@ -224,7 +224,7 @@ QString User::getErrorMessage(UserValidationError errorCode)
     case ERR_VALID_OK:               return QStringLiteral("验证通过");
     case ERR_USERNAME_EMPTY:         return QStringLiteral("用户名不能为空");
     case ERR_USERNAME_LENGTH:        return QStringLiteral("用户名长度应为3-20个字符");
-    case ERR_USERNAME_INVALID_CHAR:  return QStringLiteral("用户名只能包含中英文、数字和下划线");
+    case ERR_USERNAME_INVALID_CHAR:  return QStringLiteral("用户名只能包含字母和数字");
     case ERR_EMAIL_EMPTY:            return QStringLiteral("邮箱不能为空");
     case ERR_EMAIL_INVALID:          return QStringLiteral("邮箱格式不正确");
     case ERR_PHONE_INVALID:          return QStringLiteral("手机号格式不正确");

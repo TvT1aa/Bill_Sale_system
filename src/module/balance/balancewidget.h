@@ -49,6 +49,7 @@ private:
 
     int m_userId;
     int m_role;
+    double m_currentBalance = 0.0;
 };
 
 #endif // BALANCEWIDGET_H

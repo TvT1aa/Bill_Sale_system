@@ -1,8 +1,8 @@
-#include "balance_controllor.h"
+﻿#include "balance_controllor.h"
 #include "balancewidget.h"
 #include <QDebug>
 
-static QVariantMap transactionToMap(const TransactionInfo &t)
+static QVariantMap transactionToMap(const TransactionInfo &t, double balance)
 {
     QVariantMap m;
     m["id"] = t.id;
@@ -10,6 +10,7 @@ static QVariantMap transactionToMap(const TransactionInfo &t)
     m["amount"] = t.amount;
     m["remark"] = t.remark;
     m["createTime"] = t.createdAt;
+    m["balance"] = balance;
     return m;
 }
 
@@ -22,9 +23,18 @@ balance_controllor::balance_controllor(int userId, BalanceWidget *widget, QObjec
         AccountInfo account = DatabaseManager::instance().getAccount();
         m_view->onBalanceLoaded(account.balance, account.name);
 
+        QList<TransactionInfo> allTransactions = DatabaseManager::instance().getAllTransactions();
         QList<QVariantMap> transactions;
-        for (const TransactionInfo &t : DatabaseManager::instance().getAllTransactions())
-            transactions.append(transactionToMap(t));
+        double runningBalance = account.balance;
+        for (const TransactionInfo &t : allTransactions) {
+            transactions.append(transactionToMap(t, runningBalance));
+            // 反推上一笔时的余额（当前倒序，收入减回、支出加回）
+            if (t.type == 1) {
+                runningBalance -= t.amount;
+            } else {
+                runningBalance += t.amount;
+            }
+        }
         m_view->onTransactionsLoaded(transactions);
     });
 

@@ -1,4 +1,4 @@
-#include "inventorywidget.h"
+﻿#include "inventorywidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -117,14 +117,19 @@ void InventoryWidget::onAddClicked()
 
     QFormLayout* form = new QFormLayout(&dialog);
     QLineEdit* nameEdit = new QLineEdit(&dialog);
+    nameEdit->setMaxLength(30);
     QLineEdit* categoryEdit = new QLineEdit(&dialog);
+    categoryEdit->setMaxLength(30);
     QDoubleSpinBox* priceSpin = new QDoubleSpinBox(&dialog);
     priceSpin->setRange(0, 999999);
     priceSpin->setPrefix("¥");
+    priceSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     QSpinBox* stockSpin = new QSpinBox(&dialog);
     stockSpin->setRange(0, 99999);
+    stockSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     QLineEdit* unitEdit = new QLineEdit(&dialog);
     unitEdit->setText("件");
+    unitEdit->setMaxLength(5);
 
     form->addRow("商品名称:", nameEdit);
     form->addRow("分类:", categoryEdit);
@@ -179,15 +184,20 @@ void InventoryWidget::onEditClicked()
 
     QFormLayout* form = new QFormLayout(&dialog);
     QLineEdit* nameEdit = new QLineEdit(currentName, &dialog);
+    nameEdit->setMaxLength(30);
     QLineEdit* categoryEdit = new QLineEdit(currentCategory, &dialog);
+    categoryEdit->setMaxLength(30);
     QDoubleSpinBox* priceSpin = new QDoubleSpinBox(&dialog);
     priceSpin->setRange(0, 999999);
     priceSpin->setPrefix("¥");
+    priceSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     priceSpin->setValue(currentPrice);
     QSpinBox* stockSpin = new QSpinBox(&dialog);
     stockSpin->setRange(0, 99999);
+    stockSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     stockSpin->setValue(currentStock);
     QLineEdit* unitEdit = new QLineEdit(currentUnit, &dialog);
+    unitEdit->setMaxLength(5);
 
     form->addRow("商品名称:", nameEdit);
     form->addRow("分类:", categoryEdit);
