@@ -10,6 +10,8 @@
 #include <QMessageBox>
 #include <QGraphicsDropShadowEffect>
 #include <QApplication>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 // 构造函数：初始化窗口样式、角色区分及输入框视觉设置
 RegisterWidget::RegisterWidget(int role, QWidget *parent)
@@ -55,6 +57,12 @@ RegisterWidget::RegisterWidget(int role, QWidget *parent)
     ui->le_Register_Phone->setPalette(pal);
     ui->le_Register_Password->setPalette(pal);
     ui->le_Register_ConfirmPwd->setPalette(pal);
+
+    // 设置用户名输入框：只能输入字母和数字
+    QRegularExpressionValidator *usernameValidator = new QRegularExpressionValidator(
+        QRegularExpression("^[a-zA-Z0-9]+$"), this);
+    ui->le_Register_Username->setValidator(usernameValidator);
+    ui->le_Register_Username->setPlaceholderText("用户名（3-20位字母或数字）");
 
     // 连接关闭按钮槽函数
     connect(ui->btn_close, &QPushButton::clicked, this, &RegisterWidget::on_btn_close_clicked);
@@ -137,6 +145,13 @@ void RegisterWidget::on_btn_RegisterSubmit_clicked()
     // 格式化校验逻辑
     if (username.isEmpty()) { QMessageBox::warning(this, "提示", "请输入用户名"); return; }
     if (username.length() < 3 || username.length() > 20) { QMessageBox::warning(this, "提示", "用户名长度需在3-20位之间"); return; }
+
+    // 校验用户名格式：只能包含字母和数字
+    QRegularExpression usernameRegex("^[a-zA-Z0-9]+$");
+    if (!usernameRegex.match(username).hasMatch()) {
+        QMessageBox::warning(this, "提示", "用户名只能包含字母和数字，不能包含特殊字符");
+        return;
+    }
     if (email.isEmpty()) { QMessageBox::warning(this, "提示", "请输入邮箱"); return; }
     if (!email.contains('@') || !email.contains('.')) { QMessageBox::warning(this, "提示", "请输入有效的邮箱地址"); return; }
     if (password.isEmpty()) { QMessageBox::warning(this, "提示", "请输入密码"); return; }

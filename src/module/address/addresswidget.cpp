@@ -7,6 +7,7 @@
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QComboBox>
+#include <QCompleter>
 #include <QTextEdit>
 #include <QLabel>
 #include <QPushButton>
@@ -129,27 +130,30 @@ void AddressWidget::showAddressDialog(int addressId, const QVariantMap& data)
     if (data.contains("phone")) phoneEdit->setText(data["phone"].toString());
     form->addRow("手机号:", phoneEdit);
 
-    // 省份
-    QComboBox* provinceCombo = new QComboBox(&dialog);
-    provinceCombo->setEditable(true);
-    provinceCombo->addItems({"北京市", "上海市", "广东省", "江苏省", "浙江省", "四川省", "湖北省", "湖南省", "福建省", "山东省", "河南省", "河北省", "安徽省", "陕西省", "重庆市"});
-    provinceCombo->setMinimumHeight(36);
-    if (data.contains("province")) provinceCombo->setCurrentText(data["province"].toString());
-    form->addRow("省份:", provinceCombo);
+    // 省份（带自动补全）
+    QLineEdit* provinceEdit = new QLineEdit(&dialog);
+    provinceEdit->setPlaceholderText("请输入省份");
+    provinceEdit->setMinimumHeight(36);
+    QStringList provinces = {"北京市", "上海市", "广东省", "江苏省", "浙江省", "四川省", "湖北省", "湖南省", "福建省", "山东省", "河南省", "河北省", "安徽省", "陕西省", "重庆市"};
+    QCompleter* provinceCompleter = new QCompleter(provinces, &dialog);
+    provinceCompleter->setCaseSensitivity(Qt::CaseInsensitive);
+    provinceEdit->setCompleter(provinceCompleter);
+    if (data.contains("province")) provinceEdit->setText(data["province"].toString());
+    form->addRow("省份:", provinceEdit);
 
     // 城市
-    QComboBox* cityCombo = new QComboBox(&dialog);
-    cityCombo->setEditable(true);
-    cityCombo->setMinimumHeight(36);
-    if (data.contains("city")) cityCombo->setCurrentText(data["city"].toString());
-    form->addRow("城市:", cityCombo);
+    QLineEdit* cityEdit = new QLineEdit(&dialog);
+    cityEdit->setPlaceholderText("请输入城市");
+    cityEdit->setMinimumHeight(36);
+    if (data.contains("city")) cityEdit->setText(data["city"].toString());
+    form->addRow("城市:", cityEdit);
 
     // 区/县
-    QComboBox* districtCombo = new QComboBox(&dialog);
-    districtCombo->setEditable(true);
-    districtCombo->setMinimumHeight(36);
-    if (data.contains("district")) districtCombo->setCurrentText(data["district"].toString());
-    form->addRow("区/县:", districtCombo);
+    QLineEdit* districtEdit = new QLineEdit(&dialog);
+    districtEdit->setPlaceholderText("请输入区/县");
+    districtEdit->setMinimumHeight(36);
+    if (data.contains("district")) districtEdit->setText(data["district"].toString());
+    form->addRow("区/县:", districtEdit);
 
     // 详细地址
     QTextEdit* detailEdit = new QTextEdit(&dialog);
@@ -206,9 +210,9 @@ void AddressWidget::showAddressDialog(int addressId, const QVariantMap& data)
         QVariantMap address;
         address["name"] = nameEdit->text();
         address["phone"] = phoneEdit->text();
-        address["province"] = provinceCombo->currentText();
-        address["city"] = cityCombo->currentText();
-        address["district"] = districtCombo->currentText();
+        address["province"] = provinceEdit->text();
+        address["city"] = cityEdit->text();
+        address["district"] = districtEdit->text();
         address["detail"] = detailEdit->toPlainText();
         address["isDefault"] = (isDefaultCombo->currentIndex() == 1);
         address["userId"] = m_userId;

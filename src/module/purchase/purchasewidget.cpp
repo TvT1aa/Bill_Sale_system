@@ -1,4 +1,4 @@
-#include "purchasewidget.h"
+﻿#include "purchasewidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -34,11 +34,13 @@ void PurchaseWidget::setupUI()
     QLabel* qtyLabel = new QLabel("数量:", this);
     m_quantitySpin = new QSpinBox(this);
     m_quantitySpin->setRange(1, 99999);
+    m_quantitySpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     m_quantitySpin->setFixedWidth(80);
     QLabel* priceLabel = new QLabel("进价:", this);
     m_priceSpin = new QDoubleSpinBox(this);
     m_priceSpin->setRange(0, 999999);
     m_priceSpin->setPrefix("¥");
+    m_priceSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     m_priceSpin->setFixedWidth(100);
 
     m_addToPurchaseBtn = new QPushButton("加入进货单", this);
