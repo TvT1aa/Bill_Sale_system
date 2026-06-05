@@ -50,7 +50,7 @@ bool EmailSender::sendVerificationCode(const QString &to, const QString &code, c
 {
     // 基础配置检查
     if (m_smtpHost.isEmpty() || m_username.isEmpty() || m_password.isEmpty()) {
-        emit emailSent(false, "配置缺失");
+        emit emailSent(false, "Configuration missing");
         return false;
     }
 
@@ -103,7 +103,7 @@ void EmailSender::onReadyRead()
             if (respCode == 220) { // 收到服务器欢迎
                 m_state = EhloSent;
                 sendNextCommand(); // -> 发送 EHLO
-            } else handleError("连接拒绝");
+            } else handleError("Connection refused");
             break;
 
         case EhloSent:
@@ -124,14 +124,14 @@ void EmailSender::onReadyRead()
             if (respCode == 334) { // 准备输入密码
                 m_state = AuthPassSent;
                 sendNextCommand(); // -> 发送 Base64 密码
-            } else handleError("用户名认证失败");
+            } else handleError("Username authentication failed");
             break;
 
         case AuthPassSent:
             if (respCode == 235) { // 认证成功
                 m_state = MailFromSent;
                 sendNextCommand(); // -> 发送 MAIL FROM
-            } else handleError("密码错误");
+            } else handleError("Incorrect password");
             break;
 
         case MailFromSent:
@@ -158,9 +158,9 @@ void EmailSender::onReadyRead()
         case DataContentSent:
             if (respCode == 250) { // 发送成功
                 m_state = Done;
-                emit emailSent(true, "发送成功");
+                emit emailSent(true, "Sent successfully");
                 cleanup();
-            } else handleError("内容发送失败");
+            } else handleError("Failed to send content");
             break;
         default: break;
         }
@@ -203,7 +203,7 @@ void EmailSender::onErrorOccurred(QAbstractSocket::SocketError error)
 void EmailSender::onTimeout()
 {
     qDebug() << "[EmailSender] 发送超时，强制断开连接";
-    handleError("发送邮件超时");
+    handleError("Email sending timeout");
 }
 
 // 3. 补齐内部错误处理函数
@@ -219,7 +219,7 @@ QString EmailSender::buildMailContent() const
     QString content;
     content += "From: " + m_username + "\r\n";
     content += "To: " + m_toEmail + "\r\n";
-    content += "Subject: =?UTF-8?B?" + QString("验证码").toUtf8().toBase64() + "?=\r\n";
+    content += "Subject: =?UTF-8?B?" + QString("Verification Code").toUtf8().toBase64() + "?=\r\n";
     content += "MIME-Version: 1.0\r\n";
     content += "Content-Type: text/plain; charset=\"UTF-8\"\r\n";
     content += "Content-Transfer-Encoding: 8bit\r\n";

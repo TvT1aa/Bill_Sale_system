@@ -196,7 +196,7 @@ void LoginWidget::on_btn_registerAdmin_clicked()
     // 设置窗口关闭时自动释放内存
     m_regWindow->setAttribute(Qt::WA_DeleteOnClose);
     // 设置窗口标题（区分用户注册）
-    m_regWindow->setWindowTitle("注册管理员");
+    m_regWindow->setWindowTitle("Register Admin");
 
     // 监听注册窗口的销毁事件
     connect(m_regWindow, &RegisterWidget::destroyed, this, [this]() {
@@ -238,7 +238,7 @@ void LoginWidget::on_btnLogin_clicked()
 
     // 前端校验：用户名和密码不能为空
     if (username.isEmpty() || password.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请输入用户名和密码");
+        QMessageBox::warning(this, "Tip", "Please enter username and password");
         return;  // 校验失败，不发射登录信号
     }
 
@@ -310,7 +310,7 @@ void LoginWidget::mouseMoveEvent(QMouseEvent *event)
  */
 void LoginWidget::showLoginError(const QString &message)
 {
-    QMessageBox::warning(this, "登录失败", message);
+    QMessageBox::warning(this, "Login Failed", message);
 }
 
 /**
@@ -322,7 +322,7 @@ void LoginWidget::showLoginError(const QString &message)
  */
 void LoginWidget::showLoginSuccess(const QString &message)
 {
-    QMessageBox::information(this, "登录成功", message);
+    QMessageBox::information(this, "Login Success", message);
 }
 
 /**

@@ -34,13 +34,13 @@ MainWindow::~MainWindow()
 // 接收控制器发来的重置失败信息
 void MainWindow::showResetError(const QString &message)
 {
-    QMessageBox::warning(this, "重置失败", message);
+    QMessageBox::warning(this, "Reset Failed", message);
 }
 
 // 接收控制器发来的重置成功信息
 void MainWindow::showResetSuccess(const QString &message)
 {
-    QMessageBox::information(this, "重置成功", message);
+    QMessageBox::information(this, "Reset Success", message);
     emit closed(); // 通知登录窗口流程结束
     this->close();
 }
@@ -61,7 +61,7 @@ void MainWindow::on_btn_getCode_clicked()
 
     // 空值校验
     if (account.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请输入账号/手机号");
+        QMessageBox::warning(this, "Tip", "Please enter account/phone number");
         return;
     }
 
@@ -69,7 +69,7 @@ void MainWindow::on_btn_getCode_clicked()
     qDebug() << ">>> [DEBUG] 正在发射请求验证码信号，账号:" << account;
     emit requestVerificationCode(account);
 
-    QMessageBox::information(this, "提示", "已发送验证码请求，请稍候...");
+    QMessageBox::information(this, "Tip", "Verification code request sent, please wait...");
 }
 
 // 提交重置密码逻辑
@@ -82,12 +82,12 @@ void MainWindow::on_btn_submit_clicked()
 
     // 前端基础校验：检查输入完整性
     if (account.isEmpty() || code.isEmpty() || newPwd.isEmpty() || confirmPwd.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请填写完整信息");
+        QMessageBox::warning(this, "Tip", "Please fill in all fields");
         return;
     }
     // 密码一致性二次核对
     if (newPwd != confirmPwd) {
-        QMessageBox::warning(this, "提示", "两次输入的密码不一致");
+        QMessageBox::warning(this, "Tip", "Passwords do not match");
         return;
     }
 
@@ -119,7 +119,7 @@ void MainWindow::on_edit_newPwd_textChanged(const QString &text)
 {
     if (!ui->edit_confirmPwd->text().isEmpty()) {
         if (text != ui->edit_confirmPwd->text()) {
-            ui->label_tip->setText("两次密码不一致");
+            ui->label_tip->setText("Passwords do not match");
         } else {
             ui->label_tip->clear();
         }
@@ -129,7 +129,7 @@ void MainWindow::on_edit_newPwd_textChanged(const QString &text)
 void MainWindow::on_edit_confirmPwd_textChanged(const QString &text)
 {
     if (text != ui->edit_newPwd->text()) {
-        ui->label_tip->setText("两次密码不一致");
+        ui->label_tip->setText("Passwords do not match");
     } else {
         ui->label_tip->clear();
     }

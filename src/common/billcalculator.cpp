@@ -9,12 +9,12 @@ bool BillCalculator::recharge(double amount)
     // 只有管理员(role=1)才能操作，假设 m_userId 是当前登录的 ID
     UserInfo user = DatabaseManager::instance().getUserById(m_userId);
     if (user.role != 1) {
-        m_lastError = "无权限：仅管理员可操作";
+        m_lastError = "No permission: admin only";
         return false;
     }
 
     // 使用头文件已有的接口：addIncome (如果是充值)
-    return DatabaseManager::instance().addIncome(amount, "系统充值");
+    return DatabaseManager::instance().addIncome(amount, "System recharge");
 }
 
 bool BillCalculator::withdraw(double amount)
@@ -23,7 +23,7 @@ bool BillCalculator::withdraw(double amount)
     if (user.role != 1) return false;
 
     // 使用头文件已有的接口：addExpense
-    return DatabaseManager::instance().addExpense(amount, "提现支出");
+    return DatabaseManager::instance().addExpense(amount, "Withdrawal");
 }
 
 double BillCalculator::getCurrentBalance()

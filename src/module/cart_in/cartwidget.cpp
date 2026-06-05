@@ -40,19 +40,19 @@ void CartWidget::setupUI(int role)
 
     // 底部合计和操作按钮
     QHBoxLayout* bottomLayout = new QHBoxLayout();
-    m_totalLabel = new QLabel("总计: ¥0.00", this);
+    m_totalLabel = new QLabel("Total: ¥0.00", this);
     m_totalLabel->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; color: #F56C6C; }");
     bottomLayout->addWidget(m_totalLabel);
     bottomLayout->addStretch();
 
     if (role == 0) {
-        m_checkoutBtn = new QPushButton("结算", this);
+        m_checkoutBtn = new QPushButton("Checkout", this);
         m_checkoutBtn->setFixedSize(100, 36);
         m_checkoutBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; font-size: 14px; }");
         bottomLayout->addWidget(m_checkoutBtn);
         connect(m_checkoutBtn, &QPushButton::clicked, this, &CartWidget::onCheckout);
     } else {
-        m_submitPurchaseBtn = new QPushButton("提交进货", this);
+        m_submitPurchaseBtn = new QPushButton("Submit Purchase", this);
         m_submitPurchaseBtn->setFixedSize(100, 36);
         m_submitPurchaseBtn->setStyleSheet("QPushButton { background-color: #67C23A; color: white; border-radius: 4px; font-size: 14px; }");
         bottomLayout->addWidget(m_submitPurchaseBtn);
@@ -69,13 +69,13 @@ void CartWidget::setupUserUI()
     // 搜索栏
     QHBoxLayout* topLayout = new QHBoxLayout();
     m_searchEdit = new QLineEdit(this);
-    m_searchEdit->setPlaceholderText("搜索商品...");
+    m_searchEdit->setPlaceholderText("Search products...");
     m_searchEdit->setFixedHeight(32);
-    m_searchBtn = new QPushButton("搜索", this);
+    m_searchBtn = new QPushButton("Search", this);
     m_searchBtn->setFixedSize(80, 32);
-    m_refreshBtn = new QPushButton("刷新", this);
+    m_refreshBtn = new QPushButton("Refresh", this);
     m_refreshBtn->setFixedSize(80, 32);
-    m_addToCartBtn = new QPushButton("加入购物车", this);
+    m_addToCartBtn = new QPushButton("Add to Cart", this);
     m_addToCartBtn->setFixedSize(100, 32);
     m_addToCartBtn->setStyleSheet("QPushButton { background-color: #409EFF; color: white; border-radius: 4px; }");
 
@@ -90,7 +90,7 @@ void CartWidget::setupUserUI()
     // 商品表格
     m_tableWidget = new QTableWidget(this);
     m_tableWidget->setColumnCount(6);
-    QStringList headers = {"商品ID", "商品名称", "单价", "库存", "操作", ""};
+    QStringList headers = {"Product ID", "Product Name", "Price", "Stock", "Action", ""};
     m_tableWidget->setHorizontalHeaderLabels(headers);
     m_tableWidget->horizontalHeader()->setStretchLastSection(true);
     m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -99,13 +99,13 @@ void CartWidget::setupUserUI()
     m_tableWidget->setFixedHeight(250);
 
     // 购物车商品表格
-    QLabel* cartTitle = new QLabel("我的购物车", this);
+    QLabel* cartTitle = new QLabel("My Cart", this);
     cartTitle->setStyleSheet("QLabel { font-size: 16px; font-weight: bold; color: #303133; margin-top: 5px; }");
     mainLayout->addWidget(cartTitle);
 
     m_cartTable = new QTableWidget(this);
     m_cartTable->setColumnCount(5);
-    QStringList cartHeaders = {"商品ID", "商品名称", "单价", "数量", "小计"};
+    QStringList cartHeaders = {"Product ID", "Product Name", "Price", "Quantity", "Subtotal"};
     m_cartTable->setHorizontalHeaderLabels(cartHeaders);
     m_cartTable->horizontalHeader()->setStretchLastSection(true);
     m_cartTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -125,25 +125,25 @@ void CartWidget::setupAdminUI()
     // 顶部搜索栏
     QHBoxLayout* topLayout = new QHBoxLayout();
     m_searchEdit = new QLineEdit(this);
-    m_searchEdit->setPlaceholderText("搜索商品并加入进货单...");
+    m_searchEdit->setPlaceholderText("Search products and add to purchase...");
     m_searchEdit->setFixedHeight(32);
-    m_searchBtn = new QPushButton("搜索", this);
+    m_searchBtn = new QPushButton("Search", this);
     m_searchBtn->setFixedSize(80, 32);
-    m_refreshBtn = new QPushButton("刷新", this);
+    m_refreshBtn = new QPushButton("Refresh", this);
     m_refreshBtn->setFixedSize(80, 32);
 
     // 数量/价格输入
-    QLabel* qtyLabel = new QLabel("数量:", this);
+    QLabel* qtyLabel = new QLabel("Qty:", this);
     m_quantitySpin = new QSpinBox(this);
     m_quantitySpin->setRange(1, 99999);
     m_quantitySpin->setFixedWidth(80);
-    QLabel* priceLabel = new QLabel("进价:", this);
+    QLabel* priceLabel = new QLabel("Cost:", this);
     m_priceSpin = new QDoubleSpinBox(this);
     m_priceSpin->setRange(0, 999999);
     m_priceSpin->setPrefix("¥");
     m_priceSpin->setFixedWidth(100);
 
-    m_addToPurchaseBtn = new QPushButton("加入进货单", this);
+    m_addToPurchaseBtn = new QPushButton("Add to Purchase", this);
     m_addToPurchaseBtn->setFixedSize(100, 32);
     m_addToPurchaseBtn->setStyleSheet("QPushButton { background-color: #409EFF; color: white; border-radius: 4px; }");
 
@@ -162,7 +162,7 @@ void CartWidget::setupAdminUI()
     // 进货单表格
     m_tableWidget = new QTableWidget(this);
     m_tableWidget->setColumnCount(6);
-    QStringList headers = {"商品ID", "商品名称", "进价", "数量", "小计", "操作"};
+    QStringList headers = {"Product ID", "Product Name", "Cost", "Quantity", "Subtotal", "Action"};
     m_tableWidget->setHorizontalHeaderLabels(headers);
     m_tableWidget->horizontalHeader()->setStretchLastSection(true);
     m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -189,7 +189,7 @@ void CartWidget::onAddToCart()
 {
     int currentRow = m_tableWidget->currentRow();
     if (currentRow < 0) {
-        QMessageBox::warning(this, "提示", "请先选择商品");
+        QMessageBox::warning(this, "Tip", "Please select a product first");
         return;
     }
 
@@ -199,8 +199,8 @@ void CartWidget::onAddToCart()
     int stock = m_tableWidget->item(currentRow, 3)->text().toInt();
 
     bool ok;
-    int quantity = QInputDialog::getInt(this, "加入购物车",
-                                        QString("商品：%1\n单价：¥%2\n库存：%3\n\n请输入数量:")
+    int quantity = QInputDialog::getInt(this, "Add to Cart",
+                                        QString("Product: %1\nPrice: ¥%2\nStock: %3\n\nEnter quantity:")
                                             .arg(productName).arg(price, 0, 'f', 2).arg(stock),
                                         1, 1, stock, 1, &ok);
     if (ok && quantity > 0) {
@@ -212,7 +212,7 @@ void CartWidget::onAddToPurchase()
 {
     int currentRow = m_tableWidget->currentRow();
     if (currentRow < 0) {
-        QMessageBox::warning(this, "提示", "请先选择商品");
+        QMessageBox::warning(this, "Tip", "Please select a product first");
         return;
     }
 
@@ -221,11 +221,11 @@ void CartWidget::onAddToPurchase()
     double price = m_priceSpin->value();
 
     if (quantity <= 0) {
-        QMessageBox::warning(this, "提示", "数量必须大于0");
+        QMessageBox::warning(this, "Tip", "Quantity must be greater than 0");
         return;
     }
     if (price <= 0) {
-        QMessageBox::warning(this, "提示", "进价必须大于0");
+        QMessageBox::warning(this, "Tip", "Cost price must be greater than 0");
         return;
     }
 
@@ -236,10 +236,10 @@ void CartWidget::onRemoveItem()
 {
     int currentRow = m_tableWidget->currentRow();
     if (currentRow < 0) {
-        QMessageBox::warning(this, "提示", "请先选择要删除的项目");
+        QMessageBox::warning(this, "Tip", "Please select an item to delete");
         return;
     }
-    QMessageBox::information(this, "提示", "请在购物车表格中点击删除按钮");
+    QMessageBox::information(this, "Tip", "Please click the delete button in the cart table");
 }
 
 void CartWidget::onRemovePurchaseItem()
@@ -255,7 +255,7 @@ void CartWidget::onCheckout()
 void CartWidget::onSubmitPurchase()
 {
     if (m_tableWidget->rowCount() == 0) {
-        QMessageBox::warning(this, "提示", "进货单为空，请先添加商品");
+        QMessageBox::warning(this, "Tip", "Purchase list is empty, please add products first");
         return;
     }
     emit submitPurchaseRequested("");
@@ -281,7 +281,7 @@ void CartWidget::onCartLoaded(const QList<QVariantMap>& cartItems)
         m_cartTable->setItem(i, 3, new QTableWidgetItem(QString::number(item["quantity"].toInt())));
         m_cartTable->setItem(i, 4, new QTableWidgetItem(QString("¥%1").arg(subtotal, 0, 'f', 2)));
     }
-    m_totalLabel->setText(QString("购物车总计: ¥%1").arg(total, 0, 'f', 2));
+    m_totalLabel->setText(QString("Cart Total: ¥%1").arg(total, 0, 'f', 2));
 }
 
 void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
@@ -294,7 +294,7 @@ void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
         m_tableWidget->setItem(i, 2, new QTableWidgetItem(QString("¥%1").arg(p["salePrice"].toDouble(), 0, 'f', 2)));
         m_tableWidget->setItem(i, 3, new QTableWidgetItem(QString::number(p["quantity"].toInt())));
 
-        QPushButton* addBtn = new QPushButton("➕ 加入购物车");
+        QPushButton* addBtn = new QPushButton("➕ Add to Cart");
         addBtn->setFixedSize(100, 28);
         addBtn->setStyleSheet("QPushButton { background-color: #409EFF; color: white; border-radius: 4px; font-size: 11px; }");
         int productId = p["id"].toInt();
@@ -303,8 +303,8 @@ void CartWidget::onProductsLoaded(const QList<QVariantMap>& products)
         QString name = p["name"].toString();
         connect(addBtn, &QPushButton::clicked, [this, productId, name, price, stock]() {
             bool ok;
-            int qty = QInputDialog::getInt(this, "加入购物车",
-                                           QString("商品：%1\n单价：¥%2\n库存：%3\n\n请输入数量:")
+            int qty = QInputDialog::getInt(this, "Add to Cart",
+                                           QString("Product: %1\nPrice: ¥%2\nStock: %3\n\nEnter quantity:")
                                                .arg(name).arg(price, 0, 'f', 2).arg(stock),
                                            1, 1, stock, 1, &ok);
             if (ok && qty > 0) {
@@ -332,7 +332,7 @@ void CartWidget::onPurchaseLoaded(const QList<QVariantMap>& purchaseItems)
         m_tableWidget->setItem(i, 3, new QTableWidgetItem(QString::number(item["quantity"].toInt())));
         m_tableWidget->setItem(i, 4, new QTableWidgetItem(QString::number(subtotal)));
 
-        QPushButton* removeBtn = new QPushButton("删除");
+        QPushButton* removeBtn = new QPushButton("Delete");
         removeBtn->setFixedSize(60, 25);
         removeBtn->setStyleSheet("QPushButton { background-color: #F56C6C; color: white; border-radius: 3px; font-size: 11px; }");
         connect(removeBtn, &QPushButton::clicked, [this, id = item["id"].toInt()]() {
@@ -346,25 +346,25 @@ void CartWidget::onPurchaseLoaded(const QList<QVariantMap>& purchaseItems)
 void CartWidget::onCheckoutResult(bool success, const QString& message)
 {
     if (success) {
-        QMessageBox::information(this, "提示", message);
+        QMessageBox::information(this, "Tip", message);
         emit refreshRequested();
     } else {
-        QMessageBox::warning(this, "错误", message);
+        QMessageBox::warning(this, "Error", message);
     }
 }
 
 void CartWidget::onPurchaseResult(bool success, const QString& message)
 {
     if (success) {
-        QMessageBox::information(this, "进货成功", message);
+        QMessageBox::information(this, "Purchase Success", message);
         emit refreshRequested();
     } else {
-        QMessageBox::warning(this, "进货失败", message);
+        QMessageBox::warning(this, "Purchase Failed", message);
     }
 }
 
 void CartWidget::onBalanceInfo(double balance, const QString& message)
 {
     Q_UNUSED(balance)
-    QMessageBox::information(this, "余额信息", message);
+    QMessageBox::information(this, "Balance Info", message);
 }

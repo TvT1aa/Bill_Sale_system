@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>密码找回</string>
+   <string>Password Recovery</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget {
@@ -52,7 +52,7 @@ QLineEdit {
          </font>
         </property>
         <property name="text">
-         <string>密码找回系统</string>
+         <string>Password Recovery System</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
@@ -62,7 +62,7 @@ QLineEdit {
       <item>
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>账号/手机号</string>
+         <string>Account / Phone</string>
         </property>
        </widget>
       </item>
@@ -81,7 +81,7 @@ QLineEdit {
     <item>
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>验证码</string>
+       <string>Verification Code</string>
       </property>
      </widget>
     </item>
@@ -91,14 +91,14 @@ QLineEdit {
     <item>
      <widget class="QPushButton" name="btn_getCode">
       <property name="text">
-       <string>获取验证码</string>
+       <string>Get Code</string>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QLabel" name="label_4">
       <property name="text">
-       <string>新密码</string>
+       <string>New Password</string>
       </property>
      </widget>
     </item>
@@ -112,7 +112,7 @@ QLineEdit {
     <item>
      <widget class="QLabel" name="label_5">
       <property name="text">
-       <string>确认新密码</string>
+       <string>Confirm New Password</string>
       </property>
      </widget>
     </item>
@@ -133,14 +133,14 @@ QLineEdit {
     <item>
      <widget class="QPushButton" name="btn_submit">
       <property name="text">
-       <string>提交找回</string>
+       <string>Submit</string>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QPushButton" name="btn_back">
       <property name="text">
-       <string>返回登录</string>
+       <string>Back to Login</string>
       </property>
      </widget>
     </item>

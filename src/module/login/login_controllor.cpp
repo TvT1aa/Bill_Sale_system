@@ -61,20 +61,20 @@ bool login_controllor::login(const QString& username, const QString& password)
 
     // 校验：用户不存在
     if (info.id < 0) {
-        emit loginFailed("用户不存在");
+        emit loginFailed("User does not exist");
         return false;
     }
 
     // 校验：账号是否被封禁/禁用
     if (!info.isActive) {
-        emit loginFailed("账号已被禁用");
+        emit loginFailed("Account has been disabled");
         return false;
     }
 
     // 校验：密码加密后比对
     QString hashedInput = HashSha::hashSha256(password);
     if (info.passwordHash != hashedInput) {
-        emit loginFailed("密码错误");
+        emit loginFailed("Incorrect password");
         return false;
     }
 
@@ -94,13 +94,13 @@ bool login_controllor::registerUser(const QString& username, const QString& emai
 {
     // 校验两次密码输入一致性
     if (password != confirmPassword) {
-        emit registerFailed("两次输入的密码不一致");
+        emit registerFailed("Passwords do not match");
         return false;
     }
 
     // 校验用户名是否已存在
     if (DatabaseManager::instance().userExists(username)) {
-        emit registerFailed("用户名已存在");
+        emit registerFailed("Username already exists");
         return false;
     }
 
@@ -110,9 +110,9 @@ bool login_controllor::registerUser(const QString& username, const QString& emai
                                                              hashedPassword, role, nullptr);
 
     if (success) {
-        emit registerSuccess("注册成功！");
+        emit registerSuccess("Registration successful!");
     } else {
-        emit registerFailed("注册失败，请稍后重试");
+        emit registerFailed("Registration failed, please try again later");
     }
     return success;
 }
@@ -125,11 +125,11 @@ void login_controllor::onGetCodeRequested(const QString &account)
 
     // 校验账号存在与邮箱绑定情况
     if (user.id == 0) {
-        m_view->showResetError("该账号/手机号不存在");
+        m_view->showResetError("Account/phone number does not exist");
         return;
     }
     if (user.email.isEmpty()) {
-        m_view->showResetError("该账号未绑定邮箱，无法重置密码");
+        m_view->showResetError("Account has no email bound, cannot reset password");
         return;
     }
 
@@ -151,7 +151,7 @@ void login_controllor::onResetPasswordSubmitted(const QString &account, const QS
         m_codeCache[account].code != code ||
         m_codeCache[account].timestamp.secsTo(QDateTime::currentDateTime()) > 300) {
 
-        m_view->showResetError("验证码错误或已过期");
+        m_view->showResetError("Verification code incorrect or expired");
         return;
     }
 
@@ -161,8 +161,8 @@ void login_controllor::onResetPasswordSubmitted(const QString &account, const QS
 
     if (success) {
         m_codeCache.remove(account); // 成功后清理缓存
-        m_view->showResetSuccess("密码已重置，请登录");
+        m_view->showResetSuccess("Password has been reset, please login");
     } else {
-        m_view->showResetError("重置失败，账号不存在");
+        m_view->showResetError("Reset failed, account does not exist");
     }
 }

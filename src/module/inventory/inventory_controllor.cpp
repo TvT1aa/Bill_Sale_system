@@ -93,7 +93,7 @@ void InventoryControllor::handleAddProduct(const QVariantMap& productData)
     int productId = -1;
     bool ok = DatabaseManager::instance().addProduct(name, category, 0, salePrice, unit, "", &productId);
     if (!ok) {
-        m_view->onOperationError("添加商品失败");
+        m_view->onOperationError("Failed to add product");
         return;
     }
 
@@ -102,7 +102,7 @@ void InventoryControllor::handleAddProduct(const QVariantMap& productData)
         DatabaseManager::instance().addInventory(productId, quantity);
     }
 
-    m_view->onOperationSuccess(QString("添加商品成功: %1").arg(name));
+    m_view->onOperationSuccess(QString("Product added successfully: %1").arg(name));
     handleRefresh();
 }
 
@@ -110,7 +110,7 @@ void InventoryControllor::handleUpdateProduct(int id, const QVariantMap& product
 {
     ProductInfo product = DatabaseManager::instance().getProductById(id);
     if (product.id < 0) {
-        m_view->onOperationError("未找到该商品");
+        m_view->onOperationError("Product not found");
         return;
     }
 
@@ -124,7 +124,7 @@ void InventoryControllor::handleUpdateProduct(int id, const QVariantMap& product
                                                          product.purchasePrice, salePrice,
                                                          unit, product.remark);
     if (!ok) {
-        m_view->onOperationError("修改商品失败");
+        m_view->onOperationError("Failed to update product");
         return;
     }
 
@@ -136,7 +136,7 @@ void InventoryControllor::handleUpdateProduct(int id, const QVariantMap& product
         DatabaseManager::instance().addInventory(id, quantity);
     }
 
-    m_view->onOperationSuccess(QString("修改商品成功: %1").arg(name));
+    m_view->onOperationSuccess(QString("Product updated successfully: %1").arg(name));
     handleRefresh();
 }
 
@@ -144,17 +144,17 @@ void InventoryControllor::handleDeleteProduct(int id)
 {
     ProductInfo product = DatabaseManager::instance().getProductById(id);
     if (product.id < 0) {
-        m_view->onOperationError("未找到该商品");
+        m_view->onOperationError("Product not found");
         return;
     }
 
     bool ok = DatabaseManager::instance().deleteProduct(id);
     if (!ok) {
-        m_view->onOperationError("删除商品失败");
+        m_view->onOperationError("Failed to delete product");
         return;
     }
 
-    m_view->onOperationSuccess(QString("删除商品成功: %1").arg(product.name));
+    m_view->onOperationSuccess(QString("Product deleted successfully: %1").arg(product.name));
     handleRefresh();
 }
 
@@ -163,8 +163,8 @@ void InventoryControllor::handleAdminRegister(const QString& verifyCode, int use
     Q_UNUSED(userId);
     // 管理员验证码：简单实现，验证码为 "admin888"
     if (verifyCode == "admin888") {
-        m_view->onAdminRegisterResult(true, "注册管理员成功");
+        m_view->onAdminRegisterResult(true, "Admin registered successfully");
     } else {
-        m_view->onAdminRegisterResult(false, "验证码错误");
+        m_view->onAdminRegisterResult(false, "Incorrect verification code");
     }
 }

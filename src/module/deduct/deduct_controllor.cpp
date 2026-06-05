@@ -88,7 +88,7 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
 
             int orderId = Cart::instance().checkout(addressStr);
             bool ok = (orderId > 0);
-            m_view->onOrderResult(ok, ok ? QString("下单成功，订单ID: %1").arg(orderId) : Cart::instance().lastError());
+            m_view->onOrderResult(ok, ok ? QString("Order placed successfully, Order ID: %1").arg(orderId) : Cart::instance().lastError());
         });
 
         connect(m_view, &DeductWidget::addAddressRequested, this, [this](const QVariantMap &data) {
@@ -97,7 +97,7 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
                 data["province"].toString(), data["city"].toString(),
                 data["district"].toString(), data["detail"].toString(),
                 data["isDefault"].toBool());
-            m_view->onAddAddressResult(ok, ok ? "地址已添加" : "添加地址失败");
+            m_view->onAddAddressResult(ok, ok ? "Address added" : "Failed to add address");
         });
 
         connect(m_view, &DeductWidget::refreshAddressesRequested, this, [this]() {
@@ -118,7 +118,7 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
 
         connect(m_view, &DeductWidget::searchOrderRequested, this, [this](const QString &keyword) {
             Q_UNUSED(keyword);
-            m_view->onOperationError("搜索功能暂未实现");
+            m_view->onOperationError("Search not implemented yet");
         });
 
         connect(m_view, &DeductWidget::filterByDateRequested, this, [this](const QDateTime &start, const QDateTime &end) {
@@ -131,7 +131,7 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
         connect(m_view, &DeductWidget::manualDeductRequested, this, [this](int productId, int quantity, const QString &reason) {
             InventoryInfo inv = DatabaseManager::instance().getInventoryByProductId(productId);
             if (quantity > inv.quantity) {
-                m_view->onOperationError("库存不足");
+                m_view->onOperationError("Insufficient stock");
                 return;
             }
             DatabaseManager::instance().updateProductStock(productId, quantity);
@@ -139,16 +139,16 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
 
             double amount = quantity * p.salePrice;
             int orderId = -1;
-            if (DatabaseManager::instance().addSalesOrder(0, "手动出库",
-                    QString("出库: %1 x%2, %3").arg(p.name).arg(quantity).arg(reason), &orderId, amount)) {
+            if (DatabaseManager::instance().addSalesOrder(0, "Manual Dispatch",
+                    QString("Dispatch: %1 x%2, %3").arg(p.name).arg(quantity).arg(reason), &orderId, amount)) {
                 DatabaseManager::instance().addSalesOrderItem(orderId, productId, quantity, p.salePrice);
 
                 // 自动增加卖家余额（收入）
-                DatabaseManager::instance().addIncome(amount, QString("手动出库，订单ID: %1").arg(orderId));
+                DatabaseManager::instance().addIncome(amount, QString("Manual dispatch, Order ID: %1").arg(orderId));
 
-                m_view->onOperationSuccess(QString("出库成功，订单ID: %1").arg(orderId));
+                m_view->onOperationSuccess(QString("Dispatch successful, Order ID: %1").arg(orderId));
             } else {
-                m_view->onOperationError("出库失败");
+                m_view->onOperationError("Dispatch failed");
             }
         });
 
@@ -156,7 +156,7 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
         connect(m_view, &DeductWidget::viewOrderDetailRequested, this, [this](int orderId) {
             SalesOrderInfo order = DatabaseManager::instance().getSalesOrderById(orderId);
             if (order.id < 0) {
-                m_view->onOperationError("未找到该订单");
+                m_view->onOperationError("Order not found");
                 return;
             }
 
@@ -178,7 +178,7 @@ deduct_controllor::deduct_controllor(int userId, int mode, DeductWidget *widget,
         connect(m_view, &DeductWidget::updateOrderStatusRequested, this, [this](int orderId, int status) {
             Q_UNUSED(orderId);
             Q_UNUSED(status);
-            m_view->onOperationError("订单状态更新功能暂未实现");
+            m_view->onOperationError("Order status update not implemented yet");
         });
     }
 }

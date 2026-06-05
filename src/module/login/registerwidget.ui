@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>注册</string>
+   <string>Register</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: #667eea;</string>
@@ -62,7 +62,7 @@ border-radius: 16px;</string>
          <item>
           <widget class="QLabel" name="label_title">
            <property name="text">
-            <string>📝 用户注册</string>
+            <string>📝 User Registration</string>
            </property>
            <property name="font">
             <font>
@@ -125,7 +125,7 @@ QPushButton:hover {
        <item>
         <widget class="QLineEdit" name="le_Register_Username">
          <property name="placeholderText">
-          <string>用户名（3-20个字符）</string>
+          <string>Username (3-20 characters)</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -147,7 +147,7 @@ QLineEdit:focus {
        <item>
         <widget class="QLineEdit" name="le_Register_Email">
          <property name="placeholderText">
-          <string>电子邮箱</string>
+          <string>Email</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -169,7 +169,7 @@ QLineEdit:focus {
        <item>
         <widget class="QLineEdit" name="le_Register_Phone">
          <property name="placeholderText">
-          <string>手机号码（选填）</string>
+          <string>Phone (optional)</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -191,7 +191,7 @@ QLineEdit:focus {
        <item>
         <widget class="QLineEdit" name="le_Register_Password">
          <property name="placeholderText">
-          <string>密码（6-20个字符）</string>
+          <string>Password (6-20 characters)</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -216,7 +216,7 @@ QLineEdit:focus {
        <item>
         <widget class="QLineEdit" name="le_Register_ConfirmPwd">
          <property name="placeholderText">
-          <string>确认密码</string>
+          <string>Confirm Password</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -241,7 +241,7 @@ QLineEdit:focus {
        <item>
         <widget class="QLabel" name="label_passwordTip">
          <property name="text">
-          <string>💡 密码建议包含大小写字母、数字和特殊字符</string>
+          <string>💡 Password should contain uppercase, lowercase, numbers and special characters</string>
          </property>
          <property name="font">
           <font>
@@ -264,7 +264,7 @@ margin-bottom: 10px;</string>
           <number>44</number>
          </property>
          <property name="text">
-          <string>立即注册</string>
+          <string>Register Now</string>
          </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
@@ -290,7 +290,7 @@ QPushButton:pressed {
        <item>
         <widget class="QPushButton" name="btn_BackToLogin">
          <property name="text">
-          <string>← 返回登录</string>
+          <string>← Back to Login</string>
          </property>
          <property name="minimumHeight">
           <number>40</number>

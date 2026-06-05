@@ -12,10 +12,10 @@ int main(int argc, char *argv[])
 
     ThemeManager::forceLightTheme();
     if (!DatabaseManager::instance().connectToDatabase()) {
-        qDebug() << "数据库连接失败：" << DatabaseManager::instance().getLastError();
+        qDebug() << "Database connection failed:" << DatabaseManager::instance().getLastError();
         return -1;
     }
-    qDebug() << "数据库连接成功";
+    qDebug() << "Database connected successfully";
 
     LoginWidget loginWidget;
     login_controllor controller;
