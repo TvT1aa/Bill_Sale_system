@@ -31,11 +31,11 @@ void InventoryWidget::setupUI(int role)
     // 顶部搜索栏
     QHBoxLayout* topLayout = new QHBoxLayout();
     m_searchEdit = new QLineEdit(this);
-    m_searchEdit->setPlaceholderText("搜索商品名称...");
+    m_searchEdit->setPlaceholderText("Search product name...");
     m_searchEdit->setFixedHeight(32);
-    m_searchBtn = new QPushButton("搜索", this);
+    m_searchBtn = new QPushButton("Search", this);
     m_searchBtn->setFixedSize(80, 32);
-    m_refreshBtn = new QPushButton("刷新", this);
+    m_refreshBtn = new QPushButton("Refresh", this);
     m_refreshBtn->setFixedSize(80, 32);
 
     topLayout->addWidget(m_searchEdit);
@@ -45,16 +45,16 @@ void InventoryWidget::setupUI(int role)
 
     if (role == 0) {
         // 普通用户：注册管理员按钮
-        m_registerAdminBtn = new QPushButton("注册管理员", this);
+        m_registerAdminBtn = new QPushButton("Register Admin", this);
         m_registerAdminBtn->setFixedSize(120, 32);
         m_registerAdminBtn->setStyleSheet("QPushButton { background-color: #E6A23C; color: white; border-radius: 4px; }");
         topLayout->addWidget(m_registerAdminBtn);
         connect(m_registerAdminBtn, &QPushButton::clicked, this, &InventoryWidget::onRegisterAdminClicked);
     } else {
         // 管理员：增删改按钮
-        m_addBtn = new QPushButton("添加商品", this);
-        m_editBtn = new QPushButton("编辑商品", this);
-        m_deleteBtn = new QPushButton("删除商品", this);
+        m_addBtn = new QPushButton("Add Product", this);
+        m_editBtn = new QPushButton("Edit Product", this);
+        m_deleteBtn = new QPushButton("Delete Product", this);
         m_addBtn->setFixedSize(100, 32);
         m_editBtn->setFixedSize(100, 32);
         m_deleteBtn->setFixedSize(100, 32);
@@ -74,7 +74,7 @@ void InventoryWidget::setupUI(int role)
     // 表格
     m_tableWidget = new QTableWidget(this);
     m_tableWidget->setColumnCount(6);
-    QStringList headers = {"ID", "商品名称", "分类", "售价", "库存", "单位"};
+    QStringList headers = {"ID", "Product Name", "Category", "Price", "Stock", "Unit"};
     m_tableWidget->setHorizontalHeaderLabels(headers);
     m_tableWidget->horizontalHeader()->setStretchLastSection(true);
     m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -112,7 +112,7 @@ void InventoryWidget::onRefreshClicked()
 void InventoryWidget::onAddClicked()
 {
     QDialog dialog(this);
-    dialog.setWindowTitle("添加商品");
+    dialog.setWindowTitle("Add Product");
     dialog.setFixedSize(350, 300);
 
     QFormLayout* form = new QFormLayout(&dialog);
@@ -128,17 +128,17 @@ void InventoryWidget::onAddClicked()
     stockSpin->setRange(0, 99999);
     stockSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     QLineEdit* unitEdit = new QLineEdit(&dialog);
-    unitEdit->setText("件");
+    unitEdit->setText("pcs");
     unitEdit->setMaxLength(5);
 
-    form->addRow("商品名称:", nameEdit);
-    form->addRow("分类:", categoryEdit);
-    form->addRow("售价:", priceSpin);
-    form->addRow("库存:", stockSpin);
-    form->addRow("单位:", unitEdit);
+    form->addRow("Product Name:", nameEdit);
+    form->addRow("Category:", categoryEdit);
+    form->addRow("Price:", priceSpin);
+    form->addRow("Stock:", stockSpin);
+    form->addRow("Unit:", unitEdit);
 
-    QPushButton* submitBtn = new QPushButton("确定", &dialog);
-    QPushButton* cancelBtn = new QPushButton("取消", &dialog);
+    QPushButton* submitBtn = new QPushButton("OK", &dialog);
+    QPushButton* cancelBtn = new QPushButton("Cancel", &dialog);
     QHBoxLayout* btnLayout = new QHBoxLayout();
     btnLayout->addWidget(submitBtn);
     btnLayout->addWidget(cancelBtn);
@@ -146,7 +146,7 @@ void InventoryWidget::onAddClicked()
 
     connect(submitBtn, &QPushButton::clicked, [&]() {
         if (nameEdit->text().isEmpty()) {
-            QMessageBox::warning(&dialog, "提示", "请输入商品名称");
+            QMessageBox::warning(&dialog, "Tip", "Please enter product name");
             return;
         }
         QVariantMap product;
@@ -167,7 +167,7 @@ void InventoryWidget::onEditClicked()
 {
     int currentRow = m_tableWidget->currentRow();
     if (currentRow < 0) {
-        QMessageBox::warning(this, "提示", "请先选择要编辑的商品");
+        QMessageBox::warning(this, "Tip", "Please select a product to edit");
         return;
     }
 
@@ -179,7 +179,7 @@ void InventoryWidget::onEditClicked()
     QString currentUnit = m_tableWidget->item(currentRow, 5)->text();
 
     QDialog dialog(this);
-    dialog.setWindowTitle("编辑商品");
+    dialog.setWindowTitle("Edit Product");
     dialog.setFixedSize(350, 300);
 
     QFormLayout* form = new QFormLayout(&dialog);
@@ -199,14 +199,14 @@ void InventoryWidget::onEditClicked()
     QLineEdit* unitEdit = new QLineEdit(currentUnit, &dialog);
     unitEdit->setMaxLength(5);
 
-    form->addRow("商品名称:", nameEdit);
-    form->addRow("分类:", categoryEdit);
-    form->addRow("售价:", priceSpin);
-    form->addRow("库存:", stockSpin);
-    form->addRow("单位:", unitEdit);
+    form->addRow("Product Name:", nameEdit);
+    form->addRow("Category:", categoryEdit);
+    form->addRow("Price:", priceSpin);
+    form->addRow("Stock:", stockSpin);
+    form->addRow("Unit:", unitEdit);
 
-    QPushButton* submitBtn = new QPushButton("确定", &dialog);
-    QPushButton* cancelBtn = new QPushButton("取消", &dialog);
+    QPushButton* submitBtn = new QPushButton("OK", &dialog);
+    QPushButton* cancelBtn = new QPushButton("Cancel", &dialog);
     QHBoxLayout* btnLayout = new QHBoxLayout();
     btnLayout->addWidget(submitBtn);
     btnLayout->addWidget(cancelBtn);
@@ -214,7 +214,7 @@ void InventoryWidget::onEditClicked()
 
     connect(submitBtn, &QPushButton::clicked, [&]() {
         if (nameEdit->text().isEmpty()) {
-            QMessageBox::warning(&dialog, "提示", "请输入商品名称");
+            QMessageBox::warning(&dialog, "Tip", "Please enter product name");
             return;
         }
         QVariantMap product;
@@ -235,7 +235,7 @@ void InventoryWidget::onDeleteClicked()
 {
     int currentRow = m_tableWidget->currentRow();
     if (currentRow < 0) {
-        QMessageBox::warning(this, "提示", "请先选择要删除的商品");
+        QMessageBox::warning(this, "Tip", "Please select a product to delete");
         return;
     }
 
@@ -243,8 +243,8 @@ void InventoryWidget::onDeleteClicked()
     QString productName = m_tableWidget->item(currentRow, 1)->text();
 
     QMessageBox::StandardButton reply = QMessageBox::question(
-        this, "确认删除",
-        QString("确定要删除商品「%1」吗？").arg(productName),
+        this, "Confirm Delete",
+        QString("Are you sure to delete product '%1'?").arg(productName),
         QMessageBox::Yes | QMessageBox::No
         );
 
@@ -256,8 +256,8 @@ void InventoryWidget::onDeleteClicked()
 void InventoryWidget::onRegisterAdminClicked()
 {
     bool ok;
-    QString code = QInputDialog::getText(this, "注册管理员",
-                                         "请输入管理员验证码:",
+    QString code = QInputDialog::getText(this, "Register Admin",
+                                         "Enter admin verification code:",
                                          QLineEdit::Password,
                                          "", &ok);
     if (ok && !code.isEmpty()) {
@@ -295,21 +295,21 @@ void InventoryWidget::onSearchResult(const QList<QVariantMap>& products)
 
 void InventoryWidget::onOperationSuccess(const QString& message)
 {
-    QMessageBox::information(this, "成功", message);
+    QMessageBox::information(this, "Success", message);
     emit refreshRequested();
 }
 
 void InventoryWidget::onOperationError(const QString& error)
 {
-    QMessageBox::warning(this, "失败", error);
+    QMessageBox::warning(this, "Failed", error);
 }
 
 void InventoryWidget::onAdminRegisterResult(bool success, const QString& message)
 {
     if (success) {
-        QMessageBox::information(this, "注册成功", "注册管理员成功，请重新登录");
+        QMessageBox::information(this, "Registration Success", "Admin registered successfully, please login again");
         emit logoutRequested();
     } else {
-        QMessageBox::warning(this, "注册失败", message);
+        QMessageBox::warning(this, "Registration Failed", message);
     }
 }

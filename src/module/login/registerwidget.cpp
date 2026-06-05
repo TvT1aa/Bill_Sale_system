@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include <QStringList>
 
 // 构造函数：初始化窗口样式、角色区分及输入框视觉设置
 RegisterWidget::RegisterWidget(int role, QWidget *parent)
@@ -36,13 +37,13 @@ RegisterWidget::RegisterWidget(int role, QWidget *parent)
 
     // 根据角色（role）动态设置标题和按钮颜色
     if (role == 1) {
-        ui->label_title->setText("👑 管理员注册");
+        ui->label_title->setText("👑 Admin Registration");
         ui->btn_RegisterSubmit->setStyleSheet(
             "QPushButton { background-color: #e6a23c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }"
             "QPushButton:hover { background-color: #d4912e; }"
             );
     } else {
-        ui->label_title->setText("📝 用户注册");
+        ui->label_title->setText("📝 User Registration");
         ui->btn_RegisterSubmit->setStyleSheet(
             "QPushButton { background-color: #67c23a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }"
             "QPushButton:hover { background-color: #5daf34; }"
@@ -58,11 +59,12 @@ RegisterWidget::RegisterWidget(int role, QWidget *parent)
     ui->le_Register_Password->setPalette(pal);
     ui->le_Register_ConfirmPwd->setPalette(pal);
 
-    // 设置用户名输入框：只能输入字母和数字
+    // 设置用户名输入框：只能输入字母、数字和下划线，且长度限制为20
     QRegularExpressionValidator *usernameValidator = new QRegularExpressionValidator(
-        QRegularExpression("^[a-zA-Z0-9]+$"), this);
+        QRegularExpression("^[a-zA-Z_][a-zA-Z0-9_]*$"), this);
     ui->le_Register_Username->setValidator(usernameValidator);
-    ui->le_Register_Username->setPlaceholderText("用户名（3-20位字母或数字）");
+    ui->le_Register_Username->setMaxLength(20);  // 限制最大输入长度为20
+    ui->le_Register_Username->setPlaceholderText("Username (3-20 chars, start with letter or _)");
 
     // 连接关闭按钮槽函数
     connect(ui->btn_close, &QPushButton::clicked, this, &RegisterWidget::on_btn_close_clicked);
@@ -114,13 +116,13 @@ void RegisterWidget::mouseMoveEvent(QMouseEvent *event)
 // 供控制器调用的错误提示接口
 void RegisterWidget::showRegisterError(const QString &message)
 {
-    QMessageBox::warning(this, "注册失败", message);
+    QMessageBox::warning(this, "Registration Failed", message);
 }
 
 // 供控制器调用的成功处理接口
 void RegisterWidget::showRegisterSuccess(const QString &message)
 {
-    QMessageBox::information(this, "注册成功", message);
+    QMessageBox::information(this, "Registration Success", message);
     emit backToLogin();  // 信号：通知登录界面返回操作
     this->close();
 }
@@ -143,20 +145,32 @@ void RegisterWidget::on_btn_RegisterSubmit_clicked()
     QString confirm  = ui->le_Register_ConfirmPwd->text();
 
     // 格式化校验逻辑
-    if (username.isEmpty()) { QMessageBox::warning(this, "提示", "请输入用户名"); return; }
-    if (username.length() < 3 || username.length() > 20) { QMessageBox::warning(this, "提示", "用户名长度需在3-20位之间"); return; }
+    if (username.isEmpty()) { QMessageBox::warning(this, "Tip", "Please enter username"); return; }
+    if (username.length() < 3 || username.length() > 20) { QMessageBox::warning(this, "Tip", "Username must be 3-20 characters"); return; }
 
-    // 校验用户名格式：只能包含字母和数字
-    QRegularExpression usernameRegex("^[a-zA-Z0-9]+$");
+    // 校验用户名格式：只能包含字母、数字和下划线，且不能以数字开头
+    QRegularExpression usernameRegex("^[a-zA-Z_][a-zA-Z0-9_]*$");
     if (!usernameRegex.match(username).hasMatch()) {
-        QMessageBox::warning(this, "提示", "用户名只能包含字母和数字，不能包含特殊字符");
+        QMessageBox::warning(this, "Tip", "Username can only contain letters, digits and underscores, and cannot start with a digit");
         return;
     }
-    if (email.isEmpty()) { QMessageBox::warning(this, "提示", "请输入邮箱"); return; }
-    if (!email.contains('@') || !email.contains('.')) { QMessageBox::warning(this, "提示", "请输入有效的邮箱地址"); return; }
-    if (password.isEmpty()) { QMessageBox::warning(this, "提示", "请输入密码"); return; }
-    if (password.length() < 6 || password.length() > 20) { QMessageBox::warning(this, "提示", "密码长度需在6-20位之间"); return; }
-    if (password != confirm) { QMessageBox::warning(this, "提示", "两次输入的密码不一致"); return; }
+
+    // 校验用户名是否包含保留字
+    static const QStringList reservedNames = {
+        "admin", "administrator", "root", "superuser", "system",
+        "test", "testing", "guest", "user", "null", "undefined",
+        "mod", "moderator", "support", "help", "info", "web",
+        "master", "owner", "manager", "operator"
+    };
+    if (reservedNames.contains(username.toLower())) {
+        QMessageBox::warning(this, "Tip", "This username is reserved, please choose another one");
+        return;
+    }
+    if (email.isEmpty()) { QMessageBox::warning(this, "Tip", "Please enter email"); return; }
+    if (!email.contains('@') || !email.contains('.')) { QMessageBox::warning(this, "Tip", "Please enter a valid email address"); return; }
+    if (password.isEmpty()) { QMessageBox::warning(this, "Tip", "Please enter password"); return; }
+    if (password.length() < 6 || password.length() > 20) { QMessageBox::warning(this, "Tip", "Password must be 6-20 characters"); return; }
+    if (password != confirm) { QMessageBox::warning(this, "Tip", "Passwords do not match"); return; }
 
     // 核心信号：将所有经过校验的注册数据发射给控制器层
     emit registerSubmitted(username, email, phone, password, confirm, m_role);

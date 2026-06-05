@@ -36,13 +36,13 @@ address_controllor::address_controllor(int userId, AddressWidget *widget, QObjec
             data["district"].toString(), data["detail"].toString(),
             data["isDefault"].toBool());
         if (ok) {
-            m_view->onOperationSuccess("地址已添加");
+            m_view->onOperationSuccess("Address added successfully");
             QList<QVariantMap> addresses;
             for (const AddressInfo &a : DatabaseManager::instance().getAddressesByUserId(m_userId))
                 addresses.append(addressToMap(a));
             m_view->onAddressLoaded(addresses);
         } else {
-            m_view->onOperationError("添加地址失败");
+            m_view->onOperationError("Failed to add address");
         }
     });
 
@@ -52,34 +52,34 @@ address_controllor::address_controllor(int userId, AddressWidget *widget, QObjec
             data["province"].toString(), data["city"].toString(),
             data["district"].toString(), data["detail"].toString());
         if (ok)
-            m_view->onOperationSuccess("地址已更新");
+            m_view->onOperationSuccess("Address updated successfully");
         else
-            m_view->onOperationError("更新地址失败");
+            m_view->onOperationError("Failed to update address");
     });
 
     connect(m_view, &AddressWidget::deleteAddressRequested, this, [this](int id) {
         bool ok = DatabaseManager::instance().deleteAddress(id);
         if (ok) {
-            m_view->onOperationSuccess("地址已删除");
+            m_view->onOperationSuccess("Address deleted successfully");
             QList<QVariantMap> addresses;
             for (const AddressInfo &a : DatabaseManager::instance().getAddressesByUserId(m_userId))
                 addresses.append(addressToMap(a));
             m_view->onAddressLoaded(addresses);
         } else {
-            m_view->onOperationError("删除地址失败");
+            m_view->onOperationError("Failed to delete address");
         }
     });
 
     connect(m_view, &AddressWidget::setDefaultAddressRequested, this, [this](int id) {
         bool ok = DatabaseManager::instance().setDefaultAddress(m_userId, id);
         if (ok) {
-            m_view->onOperationSuccess("已设为默认地址");
+            m_view->onOperationSuccess("Default address set successfully");
             QList<QVariantMap> addresses;
             for (const AddressInfo &a : DatabaseManager::instance().getAddressesByUserId(m_userId))
                 addresses.append(addressToMap(a));
             m_view->onAddressLoaded(addresses);
         } else {
-            m_view->onOperationError("设置默认地址失败");
+            m_view->onOperationError("Failed to set default address");
         }
     });
 }

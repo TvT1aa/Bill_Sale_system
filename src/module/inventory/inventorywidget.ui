@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>库存管理</string>
+   <string>Inventory Management</string>
   </property>
  </widget>
  <resources/>

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Bill&amp;Sale 系统</string>
+   <string>Bill&amp;Sale System</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: #667eea;</string>
@@ -125,7 +125,7 @@ QPushButton:hover {
        <item>
         <widget class="QLabel" name="label_subtitle">
          <property name="text">
-          <string>欢迎回来，请登录您的账号</string>
+          <string>Welcome back, please login to your account</string>
          </property>
          <property name="font">
           <font>
@@ -145,7 +145,7 @@ margin-bottom: 30px;</string>
        <item>
         <widget class="QLineEdit" name="leUsername">
          <property name="placeholderText">
-          <string>用户名 / 邮箱 / 手机号</string>
+          <string>Username / Email / Phone</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -167,7 +167,7 @@ QLineEdit:focus {
        <item>
         <widget class="QLineEdit" name="lePassword">
          <property name="placeholderText">
-          <string>密码</string>
+          <string>Password</string>
          </property>
          <property name="minimumHeight">
           <number>44</number>
@@ -195,7 +195,7 @@ QLineEdit:focus {
           <number>44</number>
          </property>
          <property name="text">
-          <string>登 录</string>
+          <string>Login</string>
          </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
@@ -223,7 +223,7 @@ QPushButton:pressed {
          <item>
           <widget class="QPushButton" name="btn_forgetPwd">
            <property name="text">
-            <string>忘记密码？</string>
+            <string>Forgot Password?</string>
            </property>
            <property name="cursor">
             <cursorShape>PointingHandCursor</cursorShape>
@@ -274,7 +274,7 @@ QPushButton:hover {
          <item>
           <widget class="QPushButton" name="btn_register">
            <property name="text">
-            <string>📝 用户注册</string>
+            <string>📝 Register</string>
            </property>
            <property name="minimumHeight">
             <number>40</number>
@@ -301,7 +301,7 @@ QPushButton:hover {
          <item>
           <widget class="QPushButton" name="btn_registerAdmin">
            <property name="text">
-            <string>👑 注册管理员</string>
+            <string>👑 Register Admin</string>
            </property>
            <property name="minimumHeight">
             <number>40</number>

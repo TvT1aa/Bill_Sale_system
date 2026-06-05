@@ -86,7 +86,7 @@ cart_controllor::cart_controllor(int userId, CartWidget *widget, QObject *parent
         for (const CartItem &c : Cart::instance().getCartItems())
             cartItems.append(cartItemToMap(c));
             m_view->onCartLoaded(cartItems);
-            m_view->onCheckoutResult(true, "已加入购物车");
+            m_view->onCheckoutResult(true, "Added to cart");
         } else {
             m_view->onCheckoutResult(false, Cart::instance().lastError());
         }
@@ -121,20 +121,20 @@ cart_controllor::cart_controllor(int userId, CartWidget *widget, QObject *parent
     connect(m_view, &CartWidget::addToPurchaseRequested, this, [this](int productId, int quantity, double price) {
         ProductInfo product = DatabaseManager::instance().getProductById(productId);
         if (product.id < 0) {
-            m_view->onPurchaseResult(false, "未找到该商品");
+            m_view->onPurchaseResult(false, "Product not found");
             return;
         }
 
         // 创建进货订单
         int orderId = -1;
         if (!DatabaseManager::instance().addPurchaseOrder(QString("进货: %1 x%2").arg(product.name).arg(quantity), &orderId)) {
-            m_view->onPurchaseResult(false, "创建进货单失败");
+            m_view->onPurchaseResult(false, "Failed to create purchase order");
             return;
         }
 
         // 添加进货明细
         if (!DatabaseManager::instance().addOrderItem(orderId, productId, quantity, price)) {
-            m_view->onPurchaseResult(false, "添加入库明细失败");
+            m_view->onPurchaseResult(false, "Failed to add purchase item");
             return;
         }
 
@@ -146,12 +146,12 @@ cart_controllor::cart_controllor(int userId, CartWidget *widget, QObject *parent
             DatabaseManager::instance().addInventory(productId, quantity);
         }
 
-        m_view->onPurchaseResult(true, QString("进货成功: %1 x%2, 订单ID: %3")
+        m_view->onPurchaseResult(true, QString("Purchase success: %1 x%2, Order ID: %3")
                                      .arg(product.name).arg(quantity).arg(orderId));
     });
 
     connect(m_view, &CartWidget::submitPurchaseRequested, this, [this](const QString &remark) {
         Q_UNUSED(remark);
-        m_view->onPurchaseResult(true, "进货单已提交");
+        m_view->onPurchaseResult(true, "Purchase order submitted");
     });
 }

@@ -221,15 +221,15 @@ bool User::verifyPassword(const QString& plainPassword) const
 QString User::getErrorMessage(UserValidationError errorCode)
 {
     switch (errorCode) {
-    case ERR_VALID_OK:               return QStringLiteral("验证通过");
-    case ERR_USERNAME_EMPTY:         return QStringLiteral("用户名不能为空");
-    case ERR_USERNAME_LENGTH:        return QStringLiteral("用户名长度应为3-20个字符");
-    case ERR_USERNAME_INVALID_CHAR:  return QStringLiteral("用户名只能包含字母和数字");
-    case ERR_EMAIL_EMPTY:            return QStringLiteral("邮箱不能为空");
-    case ERR_EMAIL_INVALID:          return QStringLiteral("邮箱格式不正确");
-    case ERR_PHONE_INVALID:          return QStringLiteral("手机号格式不正确");
-    case ERR_PASSWORD_EMPTY:         return QStringLiteral("密码不能为空");
-    case ERR_PASSWORD_WEAK:          return QStringLiteral("密码强度不足");
-    default:                         return QStringLiteral("未知错误");
+    case ERR_VALID_OK:               return QStringLiteral("Validation passed");
+    case ERR_USERNAME_EMPTY:         return QStringLiteral("Username cannot be empty");
+    case ERR_USERNAME_LENGTH:        return QStringLiteral("Username must be 3-20 characters");
+    case ERR_USERNAME_INVALID_CHAR:  return QStringLiteral("Username can only contain letters and digits");
+    case ERR_EMAIL_EMPTY:            return QStringLiteral("Email cannot be empty");
+    case ERR_EMAIL_INVALID:          return QStringLiteral("Invalid email format");
+    case ERR_PHONE_INVALID:          return QStringLiteral("Invalid phone number format");
+    case ERR_PASSWORD_EMPTY:         return QStringLiteral("Password cannot be empty");
+    case ERR_PASSWORD_WEAK:          return QStringLiteral("Password is too weak");
+    default:                         return QStringLiteral("Unknown error");
     }
 }

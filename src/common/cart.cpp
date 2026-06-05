@@ -57,7 +57,7 @@ bool Cart::addToCart(int productId, int quantity)
 {
     int stock = getProductStock(productId);
     if (quantity > stock) {
-        m_lastError = QString("库存不足！当前库存：%1 件").arg(stock);
+        m_lastError = QString("Insufficient stock! Current stock: %1").arg(stock);
         return false;
     }
 
@@ -65,7 +65,7 @@ bool Cart::addToCart(int productId, int quantity)
         if (item.productId == productId) {
             int newQuantity = item.quantity + quantity;
             if (newQuantity > stock) {
-                m_lastError = QString("加入后数量超过库存！当前库存：%1 件").arg(stock);
+                m_lastError = QString("Quantity exceeds stock! Current stock: %1").arg(stock);
                 return false;
             }
             item.quantity = newQuantity;
@@ -108,7 +108,7 @@ bool Cart::updateCartQuantity(int productId, int quantity)
             }
             int stock = getProductStock(productId);
             if (quantity > stock) {
-                m_lastError = QString("库存不足！当前库存：%1 件").arg(stock);
+                m_lastError = QString("Insufficient stock! Current stock: %1").arg(stock);
                 return false;
             }
             item.quantity = quantity;
@@ -117,14 +117,14 @@ bool Cart::updateCartQuantity(int productId, int quantity)
             return true;
         }
     }
-    m_lastError = "购物车中未找到该商品";
+    m_lastError = "Product not found in cart";
     return false;
 }
 
 bool Cart::clearCart()
 {
     if (m_cartItems.isEmpty()) {
-        m_lastError = "购物车已经是空的";
+        m_lastError = "Cart is already empty";
         return false;
     }
     m_cartItems.clear();
@@ -146,7 +146,7 @@ double Cart::getCartTotal()
 int Cart::checkout(const QString& address)
 {
     if (m_cartItems.isEmpty()) {
-        m_lastError = "购物车为空，请先添加商品";
+        m_lastError = "Cart is empty, please add products first";
         return -1;
     }
 
@@ -156,7 +156,7 @@ int Cart::checkout(const QString& address)
     for (const CartItem &item : m_cartItems) {
         int stock = getProductStock(item.productId);
         if (item.quantity > stock) {
-            m_lastError = QString("商品 %1 库存不足！当前库存：%2 件")
+            m_lastError = QString("Product %1 insufficient stock! Current stock: %2")
                               .arg(item.productName).arg(stock);
             return -1;
         }
@@ -167,8 +167,8 @@ int Cart::checkout(const QString& address)
 
     // 对接队友的 addSalesOrder 接口
     int orderId = -1;
-    if (!DatabaseManager::instance().addSalesOrder(m_userId, finalAddress, "购物车下单", &orderId, total)) {
-        m_lastError = "创建订单失败";
+    if (!DatabaseManager::instance().addSalesOrder(m_userId, finalAddress, "Cart checkout", &orderId, total)) {
+        m_lastError = "Failed to create order";
         return -1;
     }
 
@@ -176,13 +176,13 @@ int Cart::checkout(const QString& address)
     // 注意：库存已在加入购物车时扣减，这里只需创建订单记录，不再重复扣库存
     for (const CartItem &item : m_cartItems) {
         if (!DatabaseManager::instance().addSalesOrderItem(orderId, item.productId, item.quantity, item.price)) {
-            m_lastError = QString("添加订单商品 %1 失败").arg(item.productName);
+            m_lastError = QString("Failed to add order item %1").arg(item.productName);
             return -1;
         }
     }
 
     // 自动增加卖家余额（收入）
-    DatabaseManager::instance().addIncome(total, QString("用户下单，订单ID: %1").arg(orderId));
+    DatabaseManager::instance().addIncome(total, QString("User order, Order ID: %1").arg(orderId));
 
     // 清空购物车并抛出成功信号
     m_cartItems.clear();

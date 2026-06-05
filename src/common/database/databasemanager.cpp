@@ -66,7 +66,7 @@ bool DatabaseManager::initDatabase()
 {
     QFile sqlFile(QCoreApplication::applicationDirPath() + "/../src/common/sql/bill_sale.sql");
     if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qCritical() << "无法打开 SQL 文件";
+        qCritical() << "Cannot open SQL file";
         return false;
     }
 
@@ -78,12 +78,12 @@ bool DatabaseManager::initDatabase()
     for (const QString& stmt : sql.split(';', Qt::SkipEmptyParts)) {
         QString trimmed = stmt.simplified();
         if (!trimmed.isEmpty() && !execute(trimmed)) {
-            qCritical() << "执行 SQL 失败:" << trimmed;
+            qCritical() << "SQL execution failed:" << trimmed;
             return false;
         }
     }
 
-    qDebug() << "数据库表初始化成功";
+    qDebug() << "Database tables initialized successfully";
     return true;
 }
 
@@ -113,13 +113,13 @@ bool DatabaseManager::updateProductStock(int productId, int quantityChange)
     // 通过商品ID查出当前的绝对库存
     InventoryInfo inv = getInventoryByProductId(productId);
     if (inv.id < 0) {
-        qDebug() << "库存扣减失败：未找到该商品的库存记录, productId:" << productId;
+        qDebug() << "Stock deduction failed: inventory record not found, productId:" << productId;
         return false;
     }
 
     // 2. 再次做安全校验
     if (inv.quantity < quantityChange) {
-        qDebug() << "库存扣减失败：当前库存" << inv.quantity << "少于请求扣减量" << quantityChange;
+        qDebug() << "Stock deduction failed: current stock" << inv.quantity << "less than requested" << quantityChange;
         return false;
     }
 

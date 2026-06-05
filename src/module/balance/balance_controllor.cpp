@@ -47,11 +47,11 @@ balance_controllor::balance_controllor(int userId, BalanceWidget *widget, QObjec
         }
 
         if (ok) {
-            m_view->onOperationSuccess("余额已调整");
+            m_view->onOperationSuccess("Balance adjusted successfully");
             AccountInfo updated = DatabaseManager::instance().getAccount();
             m_view->onBalanceLoaded(updated.balance, updated.name);
         } else {
-            m_view->onOperationError("余额调整失败");
+            m_view->onOperationError("Failed to adjust balance");
         }
     });
 }

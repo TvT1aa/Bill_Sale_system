@@ -64,7 +64,7 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
     connect(m_view, &PurchaseWidget::addToPurchaseRequested, this, [this](int productId, int quantity, double price) {
         ProductInfo product = DatabaseManager::instance().getProductById(productId);
         if (product.id < 0) {
-            m_view->onOperationError("未找到该商品");
+            m_view->onOperationError("Product not found");
             return;
         }
 
@@ -75,7 +75,7 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
                 m_purchaseList[i].quantity += quantity;
                 m_purchaseList[i].unitPrice = price;
                 m_view->onPurchaseListLoaded(purchaseListToMap(m_purchaseList));
-                m_view->onOperationSuccess(QString("已更新进货单: %1 x%2").arg(product.name).arg(m_purchaseList[i].quantity));
+                m_view->onOperationSuccess(QString("Updated purchase list: %1 x%2").arg(product.name).arg(m_purchaseList[i].quantity));
                 return;
             }
         }
@@ -89,7 +89,7 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
         m_purchaseList.append(item);
 
         m_view->onPurchaseListLoaded(purchaseListToMap(m_purchaseList));
-        m_view->onOperationSuccess(QString("已加入进货单: %1 x%2").arg(product.name).arg(quantity));
+        m_view->onOperationSuccess(QString("Added to purchase list: %1 x%2").arg(product.name).arg(quantity));
     });
 
     // 删除进货项
@@ -99,7 +99,7 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
                 QString name = m_purchaseList[i].productName;
                 m_purchaseList.removeAt(i);
                 m_view->onPurchaseListLoaded(purchaseListToMap(m_purchaseList));
-                m_view->onOperationSuccess(QString("已从进货单移除: %1").arg(name));
+                m_view->onOperationSuccess(QString("Removed from purchase list: %1").arg(name));
                 return;
             }
         }
@@ -108,15 +108,15 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
     // 提交进货
     connect(m_view, &PurchaseWidget::submitPurchaseRequested, this, [this]() {
         if (m_purchaseList.isEmpty()) {
-            m_view->onOperationError("进货单为空");
+            m_view->onOperationError("Purchase list is empty");
             return;
         }
 
         // 创建进货订单
         int orderId = -1;
-        QString remark = QString("批量进货，共%1种商品").arg(m_purchaseList.size());
+        QString remark = QString("Batch purchase, %1 products").arg(m_purchaseList.size());
         if (!DatabaseManager::instance().addPurchaseOrder(remark, &orderId)) {
-            m_view->onOperationError("创建进货单失败");
+            m_view->onOperationError("Failed to create purchase order");
             return;
         }
 
@@ -142,7 +142,7 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
         }
 
         // 自动扣减卖家余额（支出）
-        DatabaseManager::instance().addExpense(totalCost, QString("进货采购，订单ID: %1").arg(orderId));
+        DatabaseManager::instance().addExpense(totalCost, QString("Purchase order, Order ID: %1").arg(orderId));
 
         // 清空进货单
         m_purchaseList.clear();
@@ -152,9 +152,9 @@ purchase_controllor::purchase_controllor(int userId, PurchaseWidget *widget, QOb
         m_view->onProductsLoaded(getProductsWithStock());
 
         if (allSuccess) {
-            m_view->onOperationSuccess(QString("进货成功，订单ID: %1").arg(orderId));
+            m_view->onOperationSuccess(QString("Purchase successful, Order ID: %1").arg(orderId));
         } else {
-            m_view->onOperationSuccess(QString("部分商品进货失败，订单ID: %1").arg(orderId));
+            m_view->onOperationSuccess(QString("Some products failed, Order ID: %1").arg(orderId));
         }
     });
 
