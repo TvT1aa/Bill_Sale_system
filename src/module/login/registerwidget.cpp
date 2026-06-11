@@ -13,6 +13,7 @@
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 #include <QStringList>
+#include <QKeyEvent>
 
 // 构造函数：初始化窗口样式、角色区分及输入框视觉设置
 RegisterWidget::RegisterWidget(int role, QWidget *parent)
@@ -66,6 +67,25 @@ RegisterWidget::RegisterWidget(int role, QWidget *parent)
     ui->le_Register_Username->setMaxLength(20);  // 限制最大输入长度为20
     ui->le_Register_Username->setPlaceholderText("Username (3-20 chars, start with letter or _)");
 
+    // 设置手机号输入框：只能输入纯数字，最长11位
+    ui->le_Register_Phone->setPlaceholderText("Phone (11 digits, optional)");
+    ui->le_Register_Phone->installEventFilter(this);
+
+    // 实时过滤非数字字符（防止粘贴、拖拽等方式输入非数字）
+    connect(ui->le_Register_Phone, &QLineEdit::textChanged, this, [this](const QString &text) {
+        QString filtered;
+        for (const QChar &ch : text) {
+            if (ch.isDigit()) {
+                filtered += ch;
+            }
+        }
+        if (filtered.length() > 11)
+            filtered = filtered.left(11);
+        if (filtered != text) {
+            ui->le_Register_Phone->setText(filtered);
+        }
+    });
+
     // 连接关闭按钮槽函数
     connect(ui->btn_close, &QPushButton::clicked, this, &RegisterWidget::on_btn_close_clicked);
 }
@@ -111,6 +131,40 @@ void RegisterWidget::mouseMoveEvent(QMouseEvent *event)
         move(event->globalPosition().toPoint() - m_dragPosition);
         event->accept();
     }
+}
+
+// 事件过滤器：拦截手机号输入框的按键事件，只允许数字键
+bool RegisterWidget::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->le_Register_Phone && event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+        int key = keyEvent->key();
+
+        // 允许数字键 0-9
+        if (key >= Qt::Key_0 && key <= Qt::Key_9) {
+            return false;
+        }
+
+        // 允许编辑控制键
+        if (key == Qt::Key_Backspace || key == Qt::Key_Delete ||
+            key == Qt::Key_Left || key == Qt::Key_Right ||
+            key == Qt::Key_Home || key == Qt::Key_End ||
+            key == Qt::Key_Tab || key == Qt::Key_Return) {
+            return false;
+        }
+
+        // 允许 Ctrl+A（全选）、Ctrl+C（复制）、Ctrl+X（剪切），但阻止 Ctrl+V（粘贴）
+        if (keyEvent->modifiers() & Qt::ControlModifier) {
+            if (key == Qt::Key_V) {
+                return true; // 阻止粘贴
+            }
+            return false; // 允许其他组合键
+        }
+
+        // 拦截其他所有按键
+        return true;
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 // 供控制器调用的错误提示接口
@@ -166,8 +220,20 @@ void RegisterWidget::on_btn_RegisterSubmit_clicked()
         QMessageBox::warning(this, "Tip", "This username is reserved, please choose another one");
         return;
     }
+    // 校验手机号（非必填，但填了必须为11位纯数字）
+    if (!phone.isEmpty() && phone.length() != 11) {
+        QMessageBox::warning(this, "Tip", "Phone must be 11 digits");
+        return;
+    }
+
     if (email.isEmpty()) { QMessageBox::warning(this, "Tip", "Please enter email"); return; }
-    if (!email.contains('@') || !email.contains('.')) { QMessageBox::warning(this, "Tip", "Please enter a valid email address"); return; }
+
+    // 校验邮箱格式：必须包含 @，@ 后跟字母或数字，最后以 .com 结尾
+    QRegularExpression emailRegex("^[^@]+@[a-zA-Z0-9]+\\.com$");
+    if (!emailRegex.match(email).hasMatch()) {
+        QMessageBox::warning(this, "Tip", "Invalid email format, must be: xxx@<letters/digits>.com");
+        return;
+    }
     if (password.isEmpty()) { QMessageBox::warning(this, "Tip", "Please enter password"); return; }
     if (password.length() < 6 || password.length() > 20) { QMessageBox::warning(this, "Tip", "Password must be 6-20 characters"); return; }
     if (password != confirm) { QMessageBox::warning(this, "Tip", "Passwords do not match"); return; }

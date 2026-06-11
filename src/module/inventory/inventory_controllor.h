@@ -16,9 +16,9 @@ public:
     // 核心桥梁：将前端 UI Widget 传入进行绑定
     void bindWithView(InventoryWidget* view);
 
-private slots:
-    // 响应前端 UI 请求的槽函数
-    void handleRefresh();
+    private slots:
+        // 响应前端 UI 请求的槽函数
+        void handleRefresh();
     void handleSearch(const QString& keyword);
     void handleAddProduct(const QVariantMap& productData);
     void handleUpdateProduct(int id, const QVariantMap& productData);

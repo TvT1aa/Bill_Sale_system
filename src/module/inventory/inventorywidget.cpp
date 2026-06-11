@@ -9,6 +9,19 @@
 #include <QLineEdit>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
+#include <QComboBox>
+
+// 预定义的常用单位列表
+static QStringList getCommonUnits()
+{
+    return {"pcs", "kg", "g", "box", "bag", "bottle", "pair", "set", "meter", "cm", "liter", "ml", "pack", "carton", "piece"};
+}
+
+// 预定义的常用类别列表
+static QStringList getCommonCategories()
+{
+    return {"Food & Beverage", "Electronics", "Clothing", "Household", "Stationery", "Cosmetics", "Medicine", "Toys", "Sports", "Automotive", "Books", "Other"};
+}
 
 InventoryWidget::InventoryWidget(int userId, int role, QWidget *parent)
     : QWidget(parent)
@@ -118,24 +131,29 @@ void InventoryWidget::onAddClicked()
     QFormLayout* form = new QFormLayout(&dialog);
     QLineEdit* nameEdit = new QLineEdit(&dialog);
     nameEdit->setMaxLength(30);
-    QLineEdit* categoryEdit = new QLineEdit(&dialog);
-    categoryEdit->setMaxLength(30);
+    QComboBox* categoryCombo = new QComboBox(&dialog);
+    categoryCombo->setEditable(false);
+    categoryCombo->addItems(getCommonCategories());
+    categoryCombo->setCurrentText("Food & Beverage");
+    categoryCombo->setMaxVisibleItems(10);
     QDoubleSpinBox* priceSpin = new QDoubleSpinBox(&dialog);
-    priceSpin->setRange(0, 999999);
+    priceSpin->setRange(1, 999999);
     priceSpin->setPrefix("¥");
     priceSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     QSpinBox* stockSpin = new QSpinBox(&dialog);
-    stockSpin->setRange(0, 99999);
+    stockSpin->setRange(1, 99999);
     stockSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    QLineEdit* unitEdit = new QLineEdit(&dialog);
-    unitEdit->setText("pcs");
-    unitEdit->setMaxLength(5);
+    QComboBox* unitCombo = new QComboBox(&dialog);
+    unitCombo->setEditable(false);
+    unitCombo->addItems(getCommonUnits());
+    unitCombo->setCurrentText("pcs");
+    unitCombo->setMaxVisibleItems(10);
 
     form->addRow("Product Name:", nameEdit);
-    form->addRow("Category:", categoryEdit);
+    form->addRow("Category:", categoryCombo);
     form->addRow("Price:", priceSpin);
     form->addRow("Stock:", stockSpin);
-    form->addRow("Unit:", unitEdit);
+    form->addRow("Unit:", unitCombo);
 
     QPushButton* submitBtn = new QPushButton("OK", &dialog);
     QPushButton* cancelBtn = new QPushButton("Cancel", &dialog);
@@ -151,10 +169,15 @@ void InventoryWidget::onAddClicked()
         }
         QVariantMap product;
         product["name"] = nameEdit->text();
-        product["category"] = categoryEdit->text();
+        product["category"] = categoryCombo->currentText();
         product["salePrice"] = priceSpin->value();
         product["quantity"] = stockSpin->value();
-        product["unit"] = unitEdit->text();
+        QString unit = unitCombo->currentText().trimmed().toLower();
+        if (unit.isEmpty()) {
+            QMessageBox::warning(&dialog, "Tip", "Please select a unit");
+            return;
+        }
+        product["unit"] = unit;
         emit addProductRequested(product);
         dialog.accept();
     });
@@ -185,8 +208,11 @@ void InventoryWidget::onEditClicked()
     QFormLayout* form = new QFormLayout(&dialog);
     QLineEdit* nameEdit = new QLineEdit(currentName, &dialog);
     nameEdit->setMaxLength(30);
-    QLineEdit* categoryEdit = new QLineEdit(currentCategory, &dialog);
-    categoryEdit->setMaxLength(30);
+    QComboBox* categoryCombo = new QComboBox(&dialog);
+    categoryCombo->setEditable(false);
+    categoryCombo->addItems(getCommonCategories());
+    categoryCombo->setCurrentText(currentCategory);
+    categoryCombo->setMaxVisibleItems(10);
     QDoubleSpinBox* priceSpin = new QDoubleSpinBox(&dialog);
     priceSpin->setRange(0, 999999);
     priceSpin->setPrefix("¥");
@@ -196,14 +222,17 @@ void InventoryWidget::onEditClicked()
     stockSpin->setRange(0, 99999);
     stockSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     stockSpin->setValue(currentStock);
-    QLineEdit* unitEdit = new QLineEdit(currentUnit, &dialog);
-    unitEdit->setMaxLength(5);
+    QComboBox* unitCombo = new QComboBox(&dialog);
+    unitCombo->setEditable(false);
+    unitCombo->addItems(getCommonUnits());
+    unitCombo->setCurrentText(currentUnit);
+    unitCombo->setMaxVisibleItems(10);
 
     form->addRow("Product Name:", nameEdit);
-    form->addRow("Category:", categoryEdit);
+    form->addRow("Category:", categoryCombo);
     form->addRow("Price:", priceSpin);
     form->addRow("Stock:", stockSpin);
-    form->addRow("Unit:", unitEdit);
+    form->addRow("Unit:", unitCombo);
 
     QPushButton* submitBtn = new QPushButton("OK", &dialog);
     QPushButton* cancelBtn = new QPushButton("Cancel", &dialog);
@@ -219,10 +248,15 @@ void InventoryWidget::onEditClicked()
         }
         QVariantMap product;
         product["name"] = nameEdit->text();
-        product["category"] = categoryEdit->text();
+        product["category"] = categoryCombo->currentText();
         product["salePrice"] = priceSpin->value();
         product["quantity"] = stockSpin->value();
-        product["unit"] = unitEdit->text();
+        QString unit = unitCombo->currentText().trimmed().toLower();
+        if (unit.isEmpty()) {
+            QMessageBox::warning(&dialog, "Tip", "Please select a unit");
+            return;
+        }
+        product["unit"] = unit;
         emit updateProductRequested(productId, product);
         dialog.accept();
     });

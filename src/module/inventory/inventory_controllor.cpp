@@ -1,6 +1,7 @@
 #include "databasemanager.h"
 #include "inventory_controllor.h"
 #include <QDebug>
+#include <QRegularExpression>
 
 InventoryControllor::InventoryControllor(QObject *parent)
     : QObject(parent)
@@ -90,6 +91,19 @@ void InventoryControllor::handleAddProduct(const QVariantMap& productData)
     int quantity = productData["quantity"].toInt();
     QString unit = productData["unit"].toString();
 
+    // 后端校验：单位只能包含字母
+    QRegularExpression unitRegex("^[a-zA-Z]+$");
+    if (!unitRegex.match(unit).hasMatch()) {
+        m_view->onOperationError("Unit must contain only letters (e.g., pcs, kg, box)");
+        return;
+    }
+
+    // 后端校验：类别不能为空
+    if (category.isEmpty()) {
+        m_view->onOperationError("Category cannot be empty");
+        return;
+    }
+
     int productId = -1;
     bool ok = DatabaseManager::instance().addProduct(name, category, 0, salePrice, unit, "", &productId);
     if (!ok) {
@@ -119,6 +133,19 @@ void InventoryControllor::handleUpdateProduct(int id, const QVariantMap& product
     double salePrice = productData["salePrice"].toDouble();
     int quantity = productData["quantity"].toInt();
     QString unit = productData["unit"].toString();
+
+    // 后端校验：单位只能包含字母
+    QRegularExpression unitRegex("^[a-zA-Z]+$");
+    if (!unitRegex.match(unit).hasMatch()) {
+        m_view->onOperationError("Unit must contain only letters (e.g., pcs, kg, box)");
+        return;
+    }
+
+    // 后端校验：类别不能为空
+    if (category.isEmpty()) {
+        m_view->onOperationError("Category cannot be empty");
+        return;
+    }
 
     bool ok = DatabaseManager::instance().updateProduct(id, name, category,
                                                          product.purchasePrice, salePrice,

@@ -13,6 +13,7 @@
 #include "purchase/purchase_controllor.h"
 #include "balance/balance_controllor.h"
 #include "report/report_controllor.h"
+#include "cart.h"
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QFrame>
@@ -195,6 +196,16 @@ void HomeWidget::onMenuClicked(int row)
 
 void HomeWidget::onLogout()
 {
+    // 退出登录前清空购物车：恢复库存并清空购物车列表
+    Cart &cart = Cart::instance();
+    if (cart.userId() == m_userId) {
+        // 遍历购物车中所有商品，将库存加回数据库
+        for (const CartItem &item : cart.getCartItems()) {
+            DatabaseManager::instance().updateProductStock(item.productId, -item.quantity);
+        }
+        cart.clearCart();
+    }
+
     emit logoutRequested();
     this->close();
 }
